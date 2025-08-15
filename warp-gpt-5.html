@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>System 7.5 (Web)</title>
+  <!--
+    System 7.5 (Web) — Single-file Mac OS 7.5-inspired environment
+    Author: Agent Mode (gpt-5)
+
+    Overview
+    - This is a single HTML file implementing a retro-styled desktop environment inspired by Mac OS System 7.5.
+    - No external resources are loaded; everything runs offline in modern browsers.
+    - Includes: Desktop, Menu Bar, Window Manager, Finder (VFS), SimpleText, Calculator, Control Panel, Clock, About dialog, Alerts, Context Menus, Keyboard Shortcuts, and basic sounds via WebAudio.
+
+    Architecture
+    - All modules are contained in this file, organized under the global OS7 namespace.
+    - Major components:
+      * Core: Util, EventBus, Store, Prefs, Time
+      * UI: Menubar, Menus, Desktop, WindowManager, Dialogs, Alerts, Scrollbars, Widgets
+      * FS: VFS (virtual file system) with LocalStorage persistence
+      * Apps: Finder, SimpleText, Calculator, ControlPanels, AboutBox, ClockWidget
+      * Input: Keyboard, Mouse, DragDrop
+      * Audio: Synth (boot chime, beep)
+
+    Licensing & IP Notes
+    - Fonts: We use a Chicago-like stack if available (Chicago, Charcoal, Geneva) with standard fallbacks. No proprietary fonts embedded.
+    - Icons & UI are procedurally drawn or built with CSS; no Apple-owned bitmaps are embedded.
+    - Sounds are synthesized with WebAudio and are not Apple recordings.
+
+    Maintenance
+    - To reset state: run localStorage.removeItem('OS7_VFS'); localStorage.removeItem('OS7_PREFS') in DevTools, or use Special > Restore Factory Settings.
+    - To import/export VFS: Use Finder File menu (Export/Import JSON bundle).
+
+    Known Limitations
+    - Visuals are an homage and not a pixel-perfect replica.
+    - Some edge OS behaviors are simplified.
+  -->
+  <style>
+    :root {
+      /* Palette approximating System 7.5 grays */
+      --black: #000;
+      --white: #fff;
+      --bg: #c0c0c0;           /* main desktop gray */
+      --light: #e0e0e0;        /* highlights */
+      --mid: #b5b5b5;          /* medium */
+      --dark: #7f7f7f;         /* dark shadow */
+      --title-active: #808080; /* active title bar */
+      --title-inactive: #a0a0a0; /* inactive title bar */
+      --select: #7aa3e3;       /* selection (approx.) */
+      --text: #111;
+      --menu-gray: #d7d7d7;
+      --menu-border: #5b5b5b;
+      --alert-gray: #d0d0d0;
+
+      --menubar-h: 22px;
+      --titlebar-h: 19px;
+      --scrollbar: 14px;
+      --win-border: 1px;
+      --icon-size: 32px;
+      --font: Chicago, "Charcoal", "Geneva", "Tahoma", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      image-rendering: pixelated;
+      -webkit-user-select: none;
+      user-select: none;
+      cursor: default;
+    }
+
+    /* Desktop pattern: classic 50% dither */
+    body {
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(45deg, rgba(0,0,0,0.09) 25%, rgba(0,0,0,0) 25%),
+        linear-gradient(-45deg, rgba(0,0,0,0.09) 25%, rgba(0,0,0,0) 25%),
+        linear-gradient(45deg, rgba(0,0,0,0.09) 25%, rgba(0,0,0,0) 25%),
+        linear-gradient(-45deg, rgba(0,0,0,0.09) 25%, rgba(0,0,0,0) 25%);
+      background-size: 4px 4px;
+      background-position: 0 0, 2px 0, 2px -2px, 0px 2px;
+    }
+
+    /* Menubar */
+    #menubar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--menubar-h);
+      background: var(--menu-gray);
+      border-bottom: 1px solid var(--menu-border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 6px;
+      z-index: 10000;
+      box-shadow: inset 0 1px 0 var(--white), inset 0 -1px 0 var(--dark);
+    }
+    #menubar .menu {
+      position: relative;
+      padding: 0 8px;
+      line-height: var(--menubar-h);
+      font-size: 13px;
+      border-radius: 2px;
+    }
+    #menubar .menu.active,
+    #menubar .menu:hover { background: var(--light); }
+    #menubar .spacer { flex: 1; }
+    #menubar .clock { font-size: 12px; padding: 0 8px; }
+
+    .menu-popup {
+      position: fixed;
+      top: var(--menubar-h);
+      background: var(--menu-gray);
+      border: 1px solid var(--menu-border);
+      box-shadow: 1px 1px 0 var(--white), -1px -1px 0 var(--dark);
+      min-width: 180px;
+      padding: 2px 0;
+      z-index: 10001;
+    }
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 2px 10px;
+      font-size: 13px;
+      cursor: default;
+      white-space: nowrap;
+    }
+    .menu-item.disabled { color: #666; pointer-events: none; }
+    .menu-item.divider { border-top: 1px solid var(--menu-border); margin: 4px 0; padding: 0; height: 0; }
+    .menu-item:hover, .menu-item.active { background: var(--light); }
+
+    /* Desktop layer */
+    #desktop {
+      position: absolute;
+      left: 0; right: 0; top: var(--menubar-h); bottom: 0;
+      overflow: hidden;
+    }
+
+    .desktop-icon {
+      position: absolute;
+      width: 72px;
+      text-align: center;
+      font-size: 12px;
+      color: #111;
+    }
+    .desktop-icon .icon {
+      width: var(--icon-size);
+      height: var(--icon-size);
+      margin: 4px auto 2px;
+      background: linear-gradient(#fff, #ccc);
+      border: 1px solid #333;
+      box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777;
+      image-rendering: pixelated;
+    }
+    .desktop-icon .label {
+      display: inline-block;
+      padding: 0 2px;
+      line-height: 14px;
+      border: 1px dotted transparent;
+      border-radius: 2px;
+    }
+    .desktop-icon.selected .label {
+      background: var(--light);
+      border-color: var(--dark);
+    }
+
+    /* Windows */
+    .window {
+      position: absolute;
+      background: #dcdcdc;
+      border: var(--win-border) solid var(--black);
+      box-shadow: inset 1px 1px 0 var(--white), inset -1px -1px 0 var(--dark);
+      min-width: 240px;
+      min-height: 140px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
+    .titlebar {
+      height: var(--titlebar-h);
+      background: var(--title-inactive);
+      color: #000;
+      display: flex;
+      align-items: center;
+      padding: 0 4px;
+      gap: 6px;
+      border-bottom: 1px solid #000;
+      box-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 var(--dark);
+      cursor: move;
+      font-size: 13px;
+    }
+    .window.active .titlebar { background: var(--title-active); }
+    .title-controls { display: flex; gap: 4px; }
+    .tb-btn {
+      width: 11px; height: 11px;
+      background: #c8c8c8;
+      border: 1px solid #000;
+      box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #7a7a7a;
+    }
+    .title { flex: 1; text-align: center; }
+
+    .content { position: relative; flex: 1; background: #efefef; overflow: hidden; }
+
+    .resize-se {
+      position: absolute;
+      right: 0; bottom: 0;
+      width: 12px; height: 12px;
+      background: repeating-linear-gradient(135deg, #888, #888 1px, #ddd 1px, #ddd 2px);
+      cursor: nwse-resize;
+    }
+
+    /* Scrollbars (simplified authentic look) */
+    .scroll-container { position: absolute; inset: 0; overflow: hidden; }
+    .scroll-content { position: absolute; left: 0; top: 0; }
+    .vbar, .hbar {
+      position: absolute;
+      background: #d3d3d3;
+      border: 1px solid #000;
+      box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777;
+    }
+    .vbar { width: var(--scrollbar); right: 0; top: 0; bottom: var(--scrollbar); }
+    .hbar { height: var(--scrollbar); left: 0; right: var(--scrollbar); bottom: 0; }
+    .sb-arrow { width: var(--scrollbar); height: var(--scrollbar); background: #c8c8c8; border-bottom: 1px solid #000; display: grid; place-items: center; }
+    .sb-arrow.down, .sb-arrow.right { border-bottom: 0; border-top: 1px solid #000; }
+    .thumb { position: absolute; background: #bbb; border: 1px solid #000; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777; }
+
+    /* Finder list */
+    .finder-list { font-size: 13px; }
+    .finder-toolbar { display: flex; gap: 6px; padding: 4px; background: #ddd; border-bottom: 1px solid #000; }
+    .btn { padding: 1px 6px; border: 1px solid #000; background: #cfcfcf; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777; font-size: 12px; }
+    .btn:active { transform: translate(1px,1px); }
+
+    .list-header { display: grid; grid-template-columns: 1fr 120px 80px 160px; padding: 2px 6px; background: #eee; border-bottom: 1px solid #000; }
+    .list-row { display: grid; grid-template-columns: 1fr 120px 80px 160px; padding: 2px 6px; cursor: default; }
+    .list-row.selected { background: var(--light); }
+
+    /* Text editor */
+    .editor {
+      position: absolute; inset: 0;
+      padding: 6px; font-size: 14px; line-height: 1.4;
+      white-space: pre-wrap; overflow: auto; background: #fff; color: #000;
+      -webkit-user-select: text; user-select: text;
+    }
+
+    /* Calculator */
+    .calc {
+      display: grid; grid-template-rows: auto 1fr; height: 100%;
+    }
+    .calc-display { background:#fff; border:1px solid #000; margin:6px; padding:6px; font-family: monospace; font-size:18px; text-align:right; }
+    .calc-keys { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; padding:6px; }
+    .calc-btn { padding:8px; background:#cfcfcf; border:1px solid #000; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777; text-align:center; }
+    .calc-btn:active { transform: translate(1px,1px); }
+
+    /* Modals & alerts */
+    .modal-overlay { position: fixed; inset:0; background: rgba(0,0,0,0.2); z-index: 20000; display: none; }
+    .modal {
+      position: fixed; min-width: 300px; background: var(--alert-gray);
+      border: 1px solid #000; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777; padding-bottom: 8px; z-index: 20001;
+    }
+    .modal .titlebar { cursor: default; }
+    .modal .body { padding: 10px; font-size: 13px; }
+    .modal .actions { display:flex; justify-content: center; gap: 8px; }
+
+    /* Boot screen */
+    #boot {
+      position: fixed; inset: 0; background: var(--bg); z-index: 30000; display: grid; place-items: center;
+    }
+    .boot-panel { background: var(--alert-gray); border: 1px solid #000; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777; padding: 20px; min-width: 320px; text-align: center; }
+    .progress { height: 12px; background: #ccc; border: 1px solid #000; box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #777; }
+    .progress > div { height: 100%; width: 0%; background: #8aa8e8; transition: width 0.6s ease; }
+
+    /* Context menu */
+    .ctx-menu { position: fixed; background: var(--menu-gray); border:1px solid var(--menu-border); box-shadow: 1px 1px 0 var(--white), -1px -1px 0 var(--dark); padding:2px 0; z-index: 25000; display:none; }
+    .ctx-item { padding:2px 10px; font-size:13px; white-space:nowrap; }
+    .ctx-item:hover { background: var(--light); }
+
+    /* Selection marquee */
+    .marquee { position: absolute; border:1px dotted #000; background: rgba(0,0,0,0.08); pointer-events:none; }
+
+    /* Hidden utility */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="menubar">
+    <div class="menu" data-menu="apple"></div>
+    <div class="menu" data-menu="file">File</div>
+    <div class="menu" data-menu="edit">Edit</div>
+    <div class="menu" data-menu="view">View</div>
+    <div class="menu" data-menu="special">Special</div>
+    <div class="spacer"></div>
+    <div class="menu apps" data-menu="apps">Applications</div>
+    <div class="clock" id="clock">--:--</div>
+  </div>
+  <div id="desktop"></div>
+
+  <div id="boot">
+    <div class="boot-panel">
+      <div style="font-size:16px; margin-bottom: 10px">Welcome to Macintosh</div>
+      <div class="progress"><div id="boot-progress"></div></div>
+      <div style="font-size:12px; margin-top:8px; color:#333">Starting up…</div>
+      <div style="font-size:11px; margin-top:4px; color:#555">Click anywhere to enable sound</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay"></div>
+  <div class="ctx-menu" id="ctx-menu"></div>
+
+  <script>
+  (() => {
+    "use strict";
+
+    // Namespace
+    const OS7 = {
+      version: 'Web 7.5',
+      build: '2025.08',
+      zTop: 100,
+      state: { booted: false, audioReady: false, activeWin: null },
+      modules: {},
+      apps: {},
+    };
+
+    // Util
+    const Util = OS7.modules.Util = {
+      el(tag, props={}, children=[]) {
+        const e = document.createElement(tag);
+        Object.assign(e, props);
+        for (const c of (Array.isArray(children)?children:[children])) {
+          if (c==null) continue;
+          e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+        }
+        return e;
+      },
+      uid: (()=>{ let i=1; return () => (Date.now().toString(36)+'_'+(i++)); })(),
+      clamp(v,min,max){ return Math.max(min, Math.min(max, v)); },
+      snap(v){ return Math.round(v); },
+      fmtBytes(n){ if (n<1024) return n+' B'; if(n<1024*1024) return (n/1024|0)+' KB'; return (n/1024/1024).toFixed(1)+' MB'; },
+      now(){ return new Date(); },
+      platform(){ return navigator.userAgent; },
+      isMac(){ return /Mac/.test(navigator.platform); },
+      accelKey(evt){ return Util.isMac() ? evt.metaKey : evt.ctrlKey; },
+      prevent(e){ e.preventDefault(); e.stopPropagation(); },
+      centerRect(w,h){ return { left: (window.innerWidth-w)/2, top: (window.innerHeight-parseInt(getComputedStyle(document.documentElement).getPropertyValue('--menubar-h'))-h)/2 + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--menubar-h')) } },
+      saveLS(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+      loadLS(k,d){ try{ const v = localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } },
+    };
+
+    // EventBus
+    const Bus = OS7.modules.Bus = new class { constructor(){ this.m=new Map(); }
+      on(t,f){ if(!this.m.has(t)) this.m.set(t,[]); this.m.get(t).push(f); return ()=>this.off(t,f); }
+      off(t,f){ const a=this.m.get(t)||[]; const i=a.indexOf(f); if(i>=0) a.splice(i,1); }
+      emit(t,p){ (this.m.get(t)||[]).forEach(fn=>{ try{ fn(p); }catch(e){ console.error('Bus handler',t,e);} }); }
+    };
+
+    // Store / Prefs
+    const Store = OS7.modules.Store = {
+      kVFS: 'OS7_VFS', kPREF: 'OS7_PREFS',
+      load(){ this.vfs = Util.loadLS(this.kVFS, null); this.prefs = Util.loadLS(this.kPREF, null); },
+      save(){ Util.saveLS(this.kVFS, this.vfs); Util.saveLS(this.kPREF, this.prefs); },
+    };
+
+    const Prefs = OS7.modules.Prefs = {
+      default: {
+        sound: true,
+        clock24: false,
+        pattern: 'dither',
+        windows: {},
+      },
+      get(){ return Store.prefs || (Store.prefs = structuredClone(this.default)); },
+      set(k,v){ const p=this.get(); p[k]=v; Store.prefs=p; Store.save(); Bus.emit('prefs:changed', {key:k,value:v}); },
+    };
+
+    // Audio Synth
+    const Audio = OS7.modules.Audio = {
+      ctx: null,
+      ensure(){ if(!this.ctx){ try{ this.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ console.warn('Audio unavailable'); } } return this.ctx; },
+      async resume(){ try{ await this.ctx?.resume(); }catch(e){} },
+      beep(){ const ctx=this.ensure(); if(!ctx||!Prefs.get().sound) return; const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='square'; o.frequency.value=880; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.15); o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.16); },
+      bootChime(){ const ctx=this.ensure(); if(!ctx||!Prefs.get().sound) return; const o1=ctx.createOscillator(); const o2=ctx.createOscillator(); const g=ctx.createGain(); o1.type='sine'; o2.type='sine'; o1.frequency.value=523.25; o2.frequency.value=659.25; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime+0.2); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+1.4); o1.connect(g); o2.connect(g); g.connect(ctx.destination); o1.start(); o2.start(); o1.stop(ctx.currentTime+1.5); o2.stop(ctx.currentTime+1.5); },
+    };
+
+    // Window Manager
+    const WM = OS7.modules.WM = new class {
+      constructor(){ this.windows=[]; this.seq=1; this.desktop=document.getElementById('desktop'); this.initDrag(); }
+      create({title, w=420, h=300, x, y, appId, content}){
+        const id = 'win_'+(this.seq++);
+        const win = Util.el('div',{className:'window', dataset:{id, appId}},[
+          Util.el('div',{className:'titlebar'},[
+            Util.el('div',{className:'title-controls'},[
+              Util.el('div',{className:'tb-btn', title:'Close', onclick:()=>this.close(id)}),
+              Util.el('div',{className:'tb-btn', title:'Zoom', onclick:()=>this.zoom(id)}),
+            ]),
+            Util.el('div',{className:'title', innerText:title||''}),
+            Util.el('div',{className:'title-controls'},[]),
+          ]),
+          Util.el('div',{className:'content'},[content||Util.el('div')]),
+          Util.el('div',{className:'resize-se'})
+        ]);
+        const r = Util.centerRect(w,h);
+        win.style.width = w+'px';
+        win.style.height = h+'px';
+        win.style.left = (x ?? r.left)+'px';
+        win.style.top = (y ?? r.top)+'px';
+        win.style.zIndex = (++OS7.zTop).toString();
+        this.desktop.appendChild(win);
+        this.windows.push(win);
+        this.activate(win);
+        this.bindWin(win);
+        return win;
+      }
+      bindWin(win){
+        const tb = win.querySelector('.titlebar');
+        tb.addEventListener('mousedown', e=>{ this.startMove(win, e);});
+        tb.addEventListener('dblclick', e=>{ this.zoom(win.dataset.id); });
+        win.addEventListener('mousedown', ()=> this.activate(win));
+        const se = win.querySelector('.resize-se');
+        se.addEventListener('mousedown', e=>{ this.startResize(win, e); });
+      }
+      activate(win){
+        this.windows.forEach(w=>w.classList.remove('active'));
+        win.classList.add('active');
+        win.style.zIndex = (++OS7.zTop).toString();
+        OS7.state.activeWin = win;
+      }
+      close(id){
+        const i=this.windows.findIndex(w=>w.dataset.id===id);
+        if(i>=0){ const w=this.windows[i]; w.remove(); this.windows.splice(i,1); if(OS7.state.activeWin===w) OS7.state.activeWin=null; }
+      }
+      zoom(id){
+        const w=this.windows.find(w=>w.dataset.id===id);
+        if(!w) return;
+        const bx=10, by=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--menubar-h'))+10;
+        if(!w.dataset.prev){ w.dataset.prev = JSON.stringify({left:w.style.left, top:w.style.top, width:w.style.width, height:w.style.height}); w.style.left=bx+'px'; w.style.top=by+'px'; w.style.width=(window.innerWidth-20)+'px'; w.style.height=(window.innerHeight-by-10)+'px'; }
+        else { const p=JSON.parse(w.dataset.prev); w.style.left=p.left; w.style.top=p.top; w.style.width=p.width; w.style.height=p.height; delete w.dataset.prev; }
+      }
+      initDrag(){
+        let mode=null, sx=0, sy=0, sl=0, st=0, sw=0, sh=0, win=null;
+        const onMove = (e)=>{
+          if(!mode) return;
+          const dx=e.clientX-sx, dy=e.clientY-sy;
+          if(mode==='move'){
+            let L=Util.snap(sl+dx), T=Util.snap(st+dy);
+            const mb=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--menubar-h'));
+            L=Util.clamp(L, 0, window.innerWidth-50);
+            T=Util.clamp(T, mb, window.innerHeight-40);
+            win.style.left=L+'px'; win.style.top=T+'px';
+          } else if(mode==='resize'){
+            let W=Util.snap(sw+dx), H=Util.snap(sh+dy);
+            W=Math.max(240, W); H=Math.max(140, H);
+            win.style.width=W+'px'; win.style.height=H+'px';
+          }
+        };
+        const onUp=()=>{ mode=null; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); };
+        this.startMove=(w,e)=>{ this.activate(w); mode='move'; sx=e.clientX; sy=e.clientY; sl=parseInt(w.style.left); st=parseInt(w.style.top); win=w; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); };
+        this.startResize=(w,e)=>{ this.activate(w); mode='resize'; sx=e.clientX; sy=e.clientY; sw=parseInt(w.style.width); sh=parseInt(w.style.height); win=w; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); };
+      }
+    };
+
+    // Dialogs & Alerts
+    const Dialogs = OS7.modules.Dialogs = {
+      overlay: document.getElementById('modal-overlay'),
+      alert({title='Alert', message='', actions=[{label:'OK'}]}){
+        const m = Util.el('div',{className:'modal'},[
+          Util.el('div',{className:'titlebar'},[
+            Util.el('div',{className:'title-controls'},[ Util.el('div',{className:'tb-btn',onclick:()=>close()}) ]),
+            Util.el('div',{className:'title',innerText:title}),
+            Util.el('div',{className:'title-controls'})
+          ]),
+          Util.el('div',{className:'body'},[ Util.el('div',{innerText:message}) ]),
+          Util.el('div',{className:'actions'}, actions.map(a=>{
+            const b=Util.el('button',{className:'btn',innerText:a.label}); b.addEventListener('click',()=>{ try{ a.onClick?.(); }finally{ close(); } }); return b; }))
+        ]);
+        const close=()=>{ m.remove(); this.overlay.style.display='none'; };
+        document.body.appendChild(m);
+        const {left, top} = Util.centerRect(360, 160); m.style.left=left+'px'; m.style.top=top+'px';
+        this.overlay.style.display='block';
+        Audio.beep();
+      }
+    };
+
+    // Context Menu
+    const Ctx = OS7.modules.Ctx = new class {
+      constructor(){ this.el=document.getElementById('ctx-menu'); document.addEventListener('click',()=>this.hide()); }
+      show(items,x,y){ this.el.innerHTML=''; items.forEach(it=>{ const d=Util.el('div',{className:'ctx-item',innerText:it.label}); d.addEventListener('click',()=>{ this.hide(); it.onClick?.(); }); this.el.appendChild(d); }); this.el.style.left=x+'px'; this.el.style.top=y+'px'; this.el.style.display='block'; }
+      hide(){ this.el.style.display='none'; }
+    };
+
+    // Virtual File System (simplified)
+    const VFS = OS7.modules.VFS = new class {
+      constructor(){ this.root=null; }
+      load(){ if(Store.vfs){ this.root=Store.vfs; } else { this.seed(); this.save(); } }
+      save(){ Store.vfs=this.root; Store.save(); }
+      seed(){
+        this.root = { id:'root', type:'folder', name:'Macintosh HD', children:[
+          {id:Util.uid(), type:'folder', name:'System Folder', children:[]},
+          {id:Util.uid(), type:'folder', name:'Applications', children:[
+            {id:Util.uid(), type:'app', name:'SimpleText', app:'simpletext'},
+            {id:Util.uid(), type:'app', name:'Calculator', app:'calculator'},
+            {id:Util.uid(), type:'app', name:'Control Panels', app:'controlpanels'},
+          ]},
+          {id:Util.uid(), type:'folder', name:'Utilities', children:[]},
+          {id:Util.uid(), type:'folder', name:'Documents', children:[
+            {id:Util.uid(), type:'file', kind:'text', name:'Read Me', size:18, content:'Welcome to Web System 7.5!'}
+          ]},
+        ]};
+        this.trash = { id:'trash', type:'trash', name:'Trash', children:[] };
+      }
+      findById(id,node=this.root){ if(!node) return null; if(node.id===id) return node; if(node.children) for(const c of node.children){ const r=this.findById(id,c); if(r) return r; } return null; }
+      list(node){ return (node.children||[]).slice(); }
+      add(parent,node){ parent.children=parent.children||[]; parent.children.push(node); this.save(); return node; }
+      remove(parent,node){ const i=parent.children.indexOf(node); if(i>=0) parent.children.splice(i,1); this.save(); }
+      move(node,fromParent,toParent){ this.remove(fromParent,node); this.add(toParent,node); }
+      parentOf(target,node=this.root,parent=null){ if(node===target) return parent; for(const c of (node.children||[])){ const p=this.parentOf(target,c,node); if(p) return p; } return null; }
+      path(node){ const names=[]; let cur=node; while(cur && cur.name){ names.unshift(cur.name); cur=this.parentOf(cur); } return names.join(':'); }
+      makeFile(name,kind='text',content=''){ return {id:Util.uid(), type:'file', kind, name, size:content.length, content, modified:Date.now()}; }
+      makeFolder(name){ return {id:Util.uid(), type:'folder', name, children:[]}; }
+      emptyTrash(){ this.trash.children.length=0; this.save(); }
+    };
+
+    // Desktop
+    const Desktop = OS7.modules.Desktop = new class {
+      constructor(){ this.el=document.getElementById('desktop'); this.icons=[]; this.marquee=null; this.sel=new Set(); this.init(); }
+      init(){ this.el.addEventListener('contextmenu', e=>{ Util.prevent(e); Ctx.show(this.desktopMenu(), e.clientX, e.clientY); }); this.el.addEventListener('mousedown', e=>this.onDown(e)); this.render(); }
+      desktopMenu(){ return [ {label:'New Folder', onClick:()=> Finder.createFolderAtDesktop()}, {label:'About This Macintosh', onClick:()=> About.open()}, {label:'Empty Trash', onClick:()=>{ VFS.emptyTrash(); Finder.refreshAll(); }}, {label:'Restore Factory Settings', onClick:()=>OS7.resetAll()}, ]; }
+      render(){ this.el.innerHTML='';
+        const hd = Util.el('div',{className:'desktop-icon', style:`left:${window.innerWidth-120}px; top: 60px;`}); hd.appendChild(Util.el('div',{className:'icon'})); hd.appendChild(Util.el('div',{className:'label',innerText:'Macintosh HD'})); hd.addEventListener('dblclick', ()=>Finder.openFolder(VFS.root)); this.el.appendChild(hd);
+        const trash = Util.el('div',{className:'desktop-icon', style:`left:${window.innerWidth-120}px; top:${window.innerHeight-120}px;`}); trash.appendChild(Util.el('div',{className:'icon'})); trash.appendChild(Util.el('div',{className:'label',innerText:'Trash'})); trash.addEventListener('dblclick', ()=>Finder.openFolder(VFS.trash)); this.el.appendChild(trash);
+      }
+      onDown(e){ if(e.target===this.el){ this.clearSelection(); const m=this.marquee=Util.el('div',{className:'marquee'}); this.el.appendChild(m); const sx=e.clientX, sy=e.clientY; const onMove=(ev)=>{ const x=Math.min(ev.clientX,sx); const y=Math.min(ev.clientY,sy); const w=Math.abs(ev.clientX-sx); const h=Math.abs(ev.clientY-sy); Object.assign(m.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px'}); }; const onUp=()=>{ m.remove(); this.marquee=null; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); }
+      }
+      clearSelection(){ this.sel.clear(); this.el.querySelectorAll('.desktop-icon').forEach(i=>i.classList.remove('selected')); }
+    };
+
+    // Menubar & Menus
+    const Menus = OS7.modules.Menus = new class {
+      constructor(){ this.mb=document.getElementById('menubar'); this.clock=document.getElementById('clock'); this.pop=null; this.activeMenu=null; this.map=this.build(); this.bind(); this.tickClock(); }
+      build(){ return {
+        apple: [
+          {label:'About This Macintosh', onClick:()=>About.open()},
+          {label:'—'},
+          {label:'Key Caps', onClick:()=>KeyCaps.open()},
+        ],
+        file: [
+          {label:'New Folder\t⌘N', onClick:()=>Finder.createFolder()},
+          {label:'Open…\t⌘O', onClick:()=>Finder.openDialog()},
+          {label:'Close Window\t⌘W', onClick:()=>WM.close(OS7.state.activeWin?.dataset.id)},
+          {label:'Save\t⌘S', onClick:()=>OS7.apps.simpletext?.saveActive?.()},
+          {label:'—'},
+          {label:'Export…', onClick:()=>Finder.exportSelection()},
+          {label:'Import…', onClick:()=>Finder.importFiles()},
+        ],
+        edit: [
+          {label:'Undo\t⌘Z', onClick:()=>document.execCommand('undo')},
+          {label:'Cut\t⌘X', onClick:()=>document.execCommand('cut')},
+          {label:'Copy\t⌘C', onClick:()=>document.execCommand('copy')},
+          {label:'Paste\t⌘V', onClick:()=>document.execCommand('paste')},
+          {label:'Select All\t⌘A', onClick:()=>document.execCommand('selectAll')},
+        ],
+        view: [
+          {label:'as Icons', onClick:()=>Finder.setView('icon')},
+          {label:'as List', onClick:()=>Finder.setView('list')},
+        ],
+        special: [
+          {label:'Empty Trash', onClick:()=>{ VFS.emptyTrash(); Finder.refreshAll(); }},
+          {label:'—'},
+          {label:'Restart…', onClick:()=>OS7.restart()},
+          {label:'Shut Down…', onClick:()=>OS7.shutdown()},
+          {label:'Restore Factory Settings', onClick:()=>OS7.resetAll()},
+        ],
+        apps: []
+      }; }
+      bind(){ this.mb.addEventListener('mousedown', (e)=>{ const menuEl=e.target.closest('.menu'); if(!menuEl) return; this.openMenu(menuEl.dataset.menu, menuEl); }); document.addEventListener('mousedown', (e)=>{ if(!e.target.closest('.menu-popup')) this.closeMenu(); }); }
+      openMenu(name, anchor){ this.closeMenu(); const items=this.map[name]||[]; const p=Util.el('div',{className:'menu-popup'}); items.forEach(it=>{ if(it.label==='—'){ p.appendChild(Util.el('div',{className:'menu-item divider'})); } else { const d=Util.el('div',{className:'menu-item'},[ Util.el('span',{innerText:it.label.split('\t')[0]}), Util.el('span',{innerText:it.label.split('\t')[1]||''}) ]); d.addEventListener('mousedown', ()=>{ this.closeMenu(); it.onClick?.(); }); p.appendChild(d); } }); document.body.appendChild(p); const r=anchor.getBoundingClientRect(); p.style.left=r.left+'px'; p.style.top=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--menubar-h'))+'px'; this.pop=p; this.activeMenu=name; }
+      closeMenu(){ if(this.pop){ this.pop.remove(); this.pop=null; this.activeMenu=null; } }
+      tickClock(){ const upd=()=>{ const now=new Date(); const hh=now.getHours(); const mm=now.getMinutes().toString().padStart(2,'0'); const ampm = Prefs.get().clock24 ? '' : (hh>=12?' PM':' AM'); const hour = Prefs.get().clock24 ? hh : ((hh%12)||12); this.clock.innerText = hour+':'+mm+ampm; }; setInterval(upd, 1000); upd(); }
+      refreshApps(appList){ const appsMenu = this.mb.querySelector('.menu.apps'); if(!appsMenu) return; this.map.apps = appList.map(a=>({label:a.title, onClick:()=>a.focus()})); }
+    };
+
+    // Finder
+    const Finder = OS7.apps.finder = new class {
+      constructor(){ this.windows=[]; this.currentView='icon'; }
+      openFolder(folder){
+        const content = Util.el('div',{},[]);
+        const toolbar = Util.el('div',{className:'finder-toolbar'},[
+          Util.el('button',{className:'btn',innerText:'New Folder',onclick:()=>this.createFolder(folder)}),
+          Util.el('button',{className:'btn',innerText:'List',onclick:()=>this.setView('list', win)}),
+          Util.el('button',{className:'btn',innerText:'Icons',onclick:()=>this.setView('icon', win)}),
+        ]);
+        const scroll = Util.el('div',{className:'scroll-container'});
+        const inner = Util.el('div',{className:'scroll-content'});
+        scroll.appendChild(inner);
+        content.appendChild(toolbar);
+        content.appendChild(scroll);
+        const win = WM.create({title: VFS.path(folder)||folder.name, content});
+        this.renderFolder(inner, folder, this.currentView);
+        this.installScroll(scroll, inner);
+        this.windows.push({win, folder, inner});
+      }
+      setView(view, win){ this.currentView=view; for(const w of this.windows){ if(!win || w.win===win){ this.renderFolder(w.inner, w.folder, view); } } }
+      renderFolder(container, folder, view){ container.innerHTML=''; const list=VFS.list(folder);
+        if(view==='list'){
+          const header=Util.el('div',{className:'list-header'},['Name','Kind','Size','Modified']); container.appendChild(header);
+          list.forEach(node=>{
+            const row=Util.el('div',{className:'list-row'});
+            row.appendChild(Util.el('div',{innerText:node.name}));
+            row.appendChild(Util.el('div',{innerText: node.type==='folder' ? 'Folder' : (node.type==='app'?'Application':(node.kind||'File')) }));
+            row.appendChild(Util.el('div',{innerText: Util.fmtBytes(node.size||0)}));
+            row.appendChild(Util.el('div',{innerText: node.modified? new Date(node.modified).toLocaleString():''}));
+            row.addEventListener('dblclick',()=>this.openNode(node));
+            container.appendChild(row);
+          });
+        } else { // icons
+          let x=8,y=8; const step=80, maxW=container.parentElement.clientWidth-100;
+          list.forEach(node=>{
+            const d=Util.el('div',{className:'desktop-icon',style:`left:${x}px; top:${y}px;`}); d.appendChild(Util.el('div',{className:'icon'})); d.appendChild(Util.el('div',{className:'label',innerText:node.name})); d.addEventListener('dblclick',()=>this.openNode(node)); container.appendChild(d); x+=step; if(x>maxW){ x=8; y+=90; }
+          });
+        }
+      }
+      installScroll(sc, inner){ const vbar=Util.el('div',{className:'vbar'}), hbar=Util.el('div',{className:'hbar'});
+        const vt=Util.el('div',{className:'thumb'}), ht=Util.el('div',{className:'thumb'});
+        vbar.appendChild(vt); hbar.appendChild(ht); sc.appendChild(vbar); sc.appendChild(hbar);
+        const update=()=>{ const w=sc.clientWidth, h=sc.clientHeight; const iw=inner.scrollWidth, ih=inner.scrollHeight; inner.style.width=iw+'px'; inner.style.height=ih+'px'; const vRatio=h/Math.max(h,ih); const hRatio=w/Math.max(w,iw); vt.style.height=Math.max(20, vRatio*(h-0))+'px'; ht.style.width=Math.max(20, hRatio*(w-0))+'px'; vbar.style.display= ih>h? 'block':'none'; hbar.style.display= iw>w? 'block':'none'; vbar.style.right='0'; vbar.style.top='0'; vbar.style.bottom= (hbar.style.display==='block'? getComputedStyle(document.documentElement).getPropertyValue('--scrollbar'):'0'); hbar.style.left='0'; hbar.style.right= (vbar.style.display==='block'? getComputedStyle(document.documentElement).getPropertyValue('--scrollbar'):'0'); hbar.style.bottom='0'; };
+        const state={x:0,y:0};
+        sc.addEventListener('wheel',(e)=>{ e.preventDefault(); state.y=Util.clamp(state.y+e.deltaY,0, Math.max(0, inner.scrollHeight-sc.clientHeight)); inner.style.top = -state.y+'px'; state.x=Util.clamp(state.x+e.deltaX,0, Math.max(0, inner.scrollWidth-sc.clientWidth)); inner.style.left = -state.x+'px'; });
+        const drag=(thumb, axis)=>{ let sx=0, sy=0, sy0=0, sx0=0; const onMove=(e)=>{ if(axis==='y'){ const track = sc.clientHeight - thumb.clientHeight; const ny = Util.clamp(sy0 + (e.clientY - sy), 0, track); thumb.style.top=ny+'px'; const ratio= ny/ (track||1); state.y = ratio * (inner.scrollHeight - sc.clientHeight); inner.style.top = -state.y+'px'; } else { const track = sc.clientWidth - thumb.clientWidth; const nx = Util.clamp(sx0 + (e.clientX - sx), 0, track); thumb.style.left=nx+'px'; const ratio= nx/ (track||1); state.x = ratio * (inner.scrollWidth - sc.clientWidth); inner.style.left = -state.x+'px'; } };
+          const onUp=()=>{ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); };
+          thumb.addEventListener('mousedown',(e)=>{ sx=e.clientX; sy=e.clientY; sx0=parseInt(thumb.style.left||'0'); sy0=parseInt(thumb.style.top||'0'); document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); }); };
+        drag(vt,'y'); drag(ht,'x');
+        const ro = new ResizeObserver(update); ro.observe(sc); ro.observe(inner);
+        update();
+      }
+      openNode(node){ if(node.type==='folder') this.openFolder(node); else if(node.type==='app') OS7.launch(node.app); else if(node.type==='file'){ if(node.kind==='text') SimpleText.openFile(node); else Dialogs.alert({title:'Unable to open', message:'No application can open this item.'}); } }
+      createFolder(parent){ parent=parent||VFS.root; const name='untitled folder'; const f=VFS.makeFolder(name); VFS.add(parent,f); this.refreshAll(); }
+      createFolderAtDesktop(){ this.createFolder(VFS.root); }
+      refreshAll(){ for(const w of this.windows){ this.renderFolder(w.inner, w.folder, this.currentView); } }
+      openDialog(){ Dialogs.alert({title:'Open', message:'Use Finder windows to navigate and double-click items to open.'}); }
+      exportSelection(){ const blob=new Blob([JSON.stringify(VFS.root)],{type:'application/json'}); const a=Util.el('a',{href:URL.createObjectURL(blob), download:'vfs.json'}); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
+      importFiles(){ const inp=Util.el('input',{type:'file',multiple:true}); inp.addEventListener('change', async ()=>{ for(const f of inp.files){ if(f.type.startsWith('text/')){ const t=await f.text(); VFS.add(VFS.root, VFS.makeFile(f.name,'text',t)); } else { const b = await f.arrayBuffer(); const base = btoa(String.fromCharCode(...new Uint8Array(b))); const node={id:Util.uid(), type:'file', kind:'bin', name:f.name, size:f.size, content:base}; VFS.add(VFS.root,node); } } this.refreshAll(); }); inp.click(); }
+    };
+
+    // SimpleText
+    const SimpleText = OS7.apps.simpletext = new class {
+      constructor(){ this.docs=new Map(); }
+      newDoc(){ this.open('Untitled', ''); }
+      open(title, content){ const area=Util.el('div',{className:'editor', contentEditable:true}); area.innerText = content; const win=WM.create({title:title+' — SimpleText', w:500, h:360, appId:'simpletext', content:area}); this.docs.set(win.dataset.id, {win, area, node:null}); area.focus(); }
+      openFile(node){ const area=Util.el('div',{className:'editor', contentEditable:true}); area.innerText = node.content||''; const win=WM.create({title:node.name+' — SimpleText', w:520, h:380, appId:'simpletext', content:area}); this.docs.set(win.dataset.id, {win, area, node}); area.focus(); }
+      saveActive(){ const w=OS7.state.activeWin; if(!w) return; const d=this.docs.get(w.dataset.id); if(!d) return; const text=d.area.innerText; if(d.node){ d.node.content=text; d.node.size=text.length; d.node.modified=Date.now(); VFS.save(); }
+        else { const name=prompt('Save As:', 'Untitled.txt'); if(!name) return; const file=VFS.makeFile(name,'text',text); VFS.add(VFS.root, file); d.node=file; w.querySelector('.title').innerText = name+' — SimpleText'; } Dialogs.alert({title:'Saved', message:'Your document was saved.'}); }
+    };
+
+    // Calculator
+    const Calculator = OS7.apps.calculator = new class {
+      open(){ const disp=Util.el('div',{className:'calc-display', innerText:'0'}); const keys=Util.el('div',{className:'calc-keys'});
+        const layout=['MC','MR','M+','M-','C','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','0','.','='];
+        layout.forEach(k=>{ const b=Util.el('div',{className:'calc-btn',innerText:k}); b.addEventListener('click',()=>press(k)); keys.appendChild(b); });
+        const win=WM.create({title:'Calculator', w:260, h:320, appId:'calculator', content:Util.el('div',{className:'calc'},[disp, keys])});
+        let mem=0, cur='0', op=null, acc=0; const num=(s)=>{ if(cur==='0') cur=s; else cur+=s; upd(); };
+        const upd=()=>disp.innerText=cur;
+        const fcur=()=>parseFloat(cur);
+        const apply=()=>{ const v=fcur(); if(op==='+') acc+=v; else if(op==='−') acc-=v; else if(op==='×') acc*=v; else if(op==='÷') acc/=v; else acc=v; cur = String(acc); };
+        const press=(k)=>{
+          if(/^[0-9]$/.test(k)) return num(k);
+          if(k==='.') { if(!cur.includes('.')) cur+='.'; upd(); return; }
+          if(k==='C'){ cur='0'; acc=0; op=null; upd(); return; }
+          if(k==='±'){ cur = String(-fcur()); upd(); return; }
+          if(k==='%'){ cur = String(fcur()/100); upd(); return; }
+          if(['+','−','×','÷'].includes(k)){ apply(); op=k; cur='0'; upd(); return; }
+          if(k==='='){ apply(); op=null; upd(); return; }
+          if(k==='MC'){ mem=0; return; }
+          if(k==='MR'){ cur=String(mem); upd(); return; }
+          if(k==='M+'){ mem+=fcur(); return; }
+          if(k==='M-'){ mem-=fcur(); return; }
+        };
+        // Keyboard
+        win.addEventListener('keydown',(e)=>{ const map={'+':'+','-':'−','*':'×','x':'×','/':'÷','Enter':'=','=':'=','.':'.','%':'%'}; if(map[e.key]){ press(map[e.key]); e.preventDefault(); } else if(/^[0-9]$/.test(e.key)){ press(e.key); e.preventDefault(); } });
+        win.tabIndex=0; win.focus();
+      }
+    };
+
+    // Control Panels
+    const ControlPanels = OS7.apps.controlpanels = new class {
+      open(){ const wrap=Util.el('div',{style:'padding:8px; font-size:13px; display:grid; gap:12px;'});
+        // Appearance
+        wrap.appendChild(Util.el('div',{innerHTML:'<b>Appearance</b>'}));
+        const patSel=Util.el('select'); ['dither','grid','hatch'].forEach(p=>{ const o=Util.el('option',{value:p,innerText:p}); if(Prefs.get().pattern===p) o.selected=true; patSel.appendChild(o); });
+        patSel.addEventListener('change',()=>{ Prefs.set('pattern', patSel.value); Theme.applyPattern(); });
+        wrap.appendChild(Util.el('div',{},[Util.el('label',{innerText:'Desktop Pattern: '}), patSel]));
+        const soundChk=Util.el('input',{type:'checkbox', checked:Prefs.get().sound}); soundChk.addEventListener('input',()=>Prefs.set('sound', soundChk.checked)); wrap.appendChild(Util.el('label',{},[soundChk, document.createTextNode(' Sound')]))
+        const clockChk=Util.el('input',{type:'checkbox', checked:Prefs.get().clock24}); clockChk.addEventListener('input',()=>Prefs.set('clock24', clockChk.checked)); wrap.appendChild(Util.el('label',{},[clockChk, document.createTextNode(' 24-hour clock')]))
+        const win=WM.create({title:'Control Panels', w:360, h:260, appId:'controlpanels', content:wrap});
+      }
+    };
+
+    // Key Caps (simple)
+    const KeyCaps = OS7.apps.keycaps = new class {
+      open(){ const grid=Util.el('div',{style:'display:grid; grid-template-columns: repeat(14, 1fr); gap:4px; padding:8px;'});
+        const add=(k)=>{ const d=Util.el('div',{className:'btn',innerText:k}); grid.appendChild(d); };
+        const keys='`1234567890-='.split(''); keys.forEach(add); add('Backspace'); 'qwertyuiop[]'.split('').forEach(add); add('\\'); "asdfghjkl;\\'".split('').forEach(add); add('Enter'); 'zxcvbnm,./'.split('').forEach(add);
+        const win=WM.create({title:'Key Caps', w:520, h:220, appId:'keycaps', content:grid});
+        win.addEventListener('keydown',(e)=>{ [...grid.children].forEach(c=>{ c.style.background='#cfcfcf'; }); const hit = [...grid.children].find(c=>c.innerText.toLowerCase()===e.key.toLowerCase()); if(hit) hit.style.background='#eee'; }); win.tabIndex=0; win.focus();
+      }
+    };
+
+    // About Box
+    const About = OS7.modules.About = {
+      open(){ const body=Util.el('div',{},[
+          Util.el('div',{innerHTML:`<div style="font-size:18px; text-align:center; margin-bottom:6px;">About This Macintosh</div>`}),
+          Util.el('div',{style:'font-size:13px; margin-bottom:8px; text-align:center;', innerText:`System 7.5 (Web) — Version ${OS7.version} (${OS7.build})`}),
+          Util.el('div',{style:'display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin:8px;'},[
+            Util.el('div',{},[Util.el('div',{innerText:'Total Memory'}), Util.el('div',{className:'progress'},[Util.el('div',{style:'width:60%'})])]),
+            Util.el('div',{},[Util.el('div',{innerText:'Largest Unused Block'}), Util.el('div',{className:'progress'},[Util.el('div',{style:'width:35%'})])]),
+          ]),
+          Util.el('div',{style:'font-size:12px; text-align:center; color:#333; margin-top:6px;', innerText:`Browser: ${Util.platform()}`})
+        ]);
+        const win=WM.create({title:'About This Macintosh', w:420, h:240, appId:'about', content:body});
+      }
+    };
+
+    // Theme
+    const Theme = OS7.modules.Theme = {
+      applyPattern(){ const p=Prefs.get().pattern; let bg = ''; if(p==='dither'){ bg = document.body.style.backgroundImage; /* already */ } else if(p==='grid'){ document.body.style.backgroundImage = `repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 1px, transparent 1px 8px)`; } else if(p==='hatch'){ document.body.style.backgroundImage = `repeating-linear-gradient(45deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 6px)`; } }
+    };
+
+    // Clock in menubar handled by Menus.tickClock()
+
+    // OS core
+    OS7.launch = (app)=>{
+      const map = { finder:()=>Finder.openFolder(VFS.root), simpletext:()=>SimpleText.newDoc(), calculator:()=>Calculator.open(), controlpanels:()=>ControlPanels.open(), keycaps:()=>KeyCaps.open(), about:()=>About.open() };
+      (map[app]||(()=>Dialogs.alert({title:'App not found', message:app})))();
+      Menus.refreshApps(OS7.modules.WM.windows.map(w=>({title:w.querySelector('.title').innerText.replace(/ —.*$/,''), focus:()=>OS7.modules.WM.activate(w)})));
+    };
+
+    OS7.restart = ()=>{ Dialogs.alert({title:'Restart', message:'This will reboot the environment.', actions:[{label:'Cancel'},{label:'Restart', onClick:()=>location.reload()}]}); };
+    OS7.shutdown = ()=>{ Dialogs.alert({title:'Shut Down', message:'This will close all windows.', actions:[{label:'Cancel'},{label:'Shut Down', onClick:()=>{ document.body.innerHTML='<div style="display:grid;place-items:center;height:100vh;font-family:var(--font);">It is now safe to turn off your computer.</div>'; }}]}); };
+    OS7.resetAll = ()=>{ Dialogs.alert({title:'Restore', message:'Reset to factory defaults?', actions:[{label:'Cancel'},{label:'Restore', onClick:()=>{ localStorage.removeItem(Store.kVFS); localStorage.removeItem(Store.kPREF); location.reload(); }}]}); };
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e)=>{
+      if(Util.accelKey(e)){
+        const k = e.key.toLowerCase();
+        if(k==='n'){ e.preventDefault(); Finder.createFolder(); return; }
+        if(k==='o'){ e.preventDefault(); Finder.openDialog(); return; }
+        if(k==='w'){ e.preventDefault(); WM.close(OS7.state.activeWin?.dataset.id); return; }
+        if(k==='s'){ e.preventDefault(); SimpleText.saveActive(); return; }
+        if(k==='q'){ e.preventDefault(); OS7.shutdown(); return; }
+        if(k==='z'){ e.preventDefault(); document.execCommand('undo'); return; }
+        if(k==='x'){ e.preventDefault(); document.execCommand('cut'); return; }
+        if(k==='c'){ e.preventDefault(); document.execCommand('copy'); return; }
+        if(k==='v'){ e.preventDefault(); document.execCommand('paste'); return; }
+        if(k===','){ e.preventDefault(); ControlPanels.open(); return; }
+        if(k==='tab'){ e.preventDefault(); const ws=WM.windows; if(ws.length){ const i=ws.indexOf(OS7.state.activeWin); const n=ws[(i+1)%ws.length]; WM.activate(n); } return; }
+      }
+    });
+
+    // Boot sequence
+    function boot(){ Store.load(); if(!Store.prefs){ Prefs.set('init', true); }
+      VFS.load(); Theme.applyPattern();
+      // Desktop icons
+      Desktop.render();
+      // Boot progress
+      let p=0; const bar=document.getElementById('boot-progress'); const step=()=>{ p=Math.min(100, p+Math.random()*30); bar.style.width=p+'%'; if(p<100) setTimeout(step, 300); else done(); }; step();
+      function done(){
+        document.getElementById('boot').style.display='none'; OS7.state.booted=true;
+      }
+    }
+
+    // Sound activation on first click
+    function enableAudioOnce(){ if(OS7.state.audioReady) return; OS7.state.audioReady=true; Audio.ensure(); Audio.resume(); Audio.bootChime(); document.removeEventListener('pointerdown', enableAudioOnce); }
+    document.addEventListener('pointerdown', enableAudioOnce, {once:true});
+
+    // Context menus basic bindings
+    document.getElementById('desktop').addEventListener('contextmenu', (e)=>{ Util.prevent(e); Ctx.show(Desktop.desktopMenu(), e.clientX, e.clientY); });
+
+    // Easter egg: type "sadmac" to trigger bomb box
+    (function(){ let buf=''; document.addEventListener('keydown',(e)=>{ buf = (buf+e.key.toLowerCase()).slice(-6); if(buf==='sadmac'){ Dialogs.alert({title:'System Error', message:'A system error has occurred. ID=10', actions:[{label:'Restart', onClick:()=>location.reload()}]}); Audio.beep(); } }); })();
+
+    // Start
+    boot();
+  })();
+  </script>
+</body>
+</html>
+

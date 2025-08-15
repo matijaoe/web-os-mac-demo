@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Mac OS System 7.5</title>
+		<style>
+			@font-face {
+				font-family: 'Chicago';
+				src: local('Chicago'), local('Geneva'), local('Arial');
+			}
+
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+				user-select: none;
+				-webkit-user-select: none;
+			}
+
+			body {
+				font-family: 'Chicago', Geneva, Arial, sans-serif;
+				font-size: 12px;
+				background: #c0c0c0;
+				overflow: hidden;
+				cursor: default;
+				height: 100vh;
+				position: relative;
+			}
+
+			/* Desktop Pattern */
+			#desktop {
+				position: absolute;
+				top: 20px;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background-image: repeating-linear-gradient(
+						45deg,
+						transparent,
+						transparent 2px,
+						rgba(255, 255, 255, 0.1) 2px,
+						rgba(255, 255, 255, 0.1) 4px
+					),
+					repeating-linear-gradient(
+						-45deg,
+						transparent,
+						transparent 2px,
+						rgba(0, 0, 0, 0.05) 2px,
+						rgba(0, 0, 0, 0.05) 4px
+					);
+			}
+
+			/* Menu Bar */
+			#menuBar {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 20px;
+				background: #e0e0e0;
+				border-bottom: 1px solid #000;
+				z-index: 10000;
+				display: flex;
+				align-items: center;
+				padding: 0 5px;
+			}
+
+			.menu {
+				padding: 2px 8px;
+				margin: 0 2px;
+				cursor: default;
+				position: relative;
+			}
+
+			.menu:hover,
+			.menu.active {
+				background: #000;
+				color: #fff;
+			}
+
+			.menu.apple {
+				font-weight: bold;
+				padding: 2px 12px;
+			}
+
+			.dropdown {
+				display: none;
+				position: absolute;
+				top: 100%;
+				left: 0;
+				background: #e0e0e0;
+				border: 1px solid #000;
+				min-width: 150px;
+				box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+			}
+
+			.menu.active .dropdown {
+				display: block;
+			}
+
+			.dropdown-item {
+				padding: 4px 20px;
+				cursor: default;
+				border-bottom: 1px solid #a0a0a0;
+			}
+
+			.dropdown-item:hover {
+				background: #000;
+				color: #fff;
+			}
+
+			.dropdown-item.separator {
+				height: 1px;
+				padding: 0;
+				background: #808080;
+				border: none;
+			}
+
+			/* Clock */
+			#clock {
+				margin-left: auto;
+				padding: 2px 8px;
+				font-weight: bold;
+			}
+
+			/* Desktop Icons */
+			.desktop-icon {
+				position: absolute;
+				width: 64px;
+				text-align: center;
+				cursor: default;
+				padding: 4px;
+			}
+
+			.desktop-icon.selected {
+				background: rgba(0, 0, 0, 0.2);
+			}
+
+			.desktop-icon img,
+			.icon-img {
+				width: 32px;
+				height: 32px;
+				image-rendering: pixelated;
+				display: block;
+				margin: 0 auto 4px;
+			}
+
+			.desktop-icon span {
+				display: block;
+				font-size: 10px;
+				color: #000;
+				text-shadow: 1px 1px 0 #e0e0e0;
+				word-wrap: break-word;
+			}
+
+			.desktop-icon.selected span {
+				background: #000;
+				color: #fff;
+				text-shadow: none;
+				padding: 0 2px;
+			}
+
+			/* Windows */
+			.window {
+				position: absolute;
+				background: #c0c0c0;
+				border: 1px solid #000;
+				box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+				display: none;
+				min-width: 200px;
+				min-height: 100px;
+			}
+
+			.window.active {
+				z-index: 1000;
+			}
+
+			.window.visible {
+				display: block;
+			}
+
+			.title-bar {
+				height: 20px;
+				background: linear-gradient(
+					to bottom,
+					#fff 0%,
+					#e0e0e0 50%,
+					#c0c0c0 100%
+				);
+				border-bottom: 1px solid #000;
+				display: flex;
+				align-items: center;
+				cursor: move;
+				position: relative;
+			}
+
+			.window.active .title-bar {
+				background: repeating-linear-gradient(
+					90deg,
+					#000,
+					#000 2px,
+					#fff 2px,
+					#fff 4px
+				);
+			}
+
+			.title-bar-text {
+				flex: 1;
+				text-align: center;
+				font-weight: bold;
+				padding: 0 20px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+
+			.window.active .title-bar-text {
+				color: #fff;
+			}
+
+			.close-btn {
+				position: absolute;
+				left: 4px;
+				top: 4px;
+				width: 12px;
+				height: 12px;
+				background: #e0e0e0;
+				border: 1px solid #000;
+				cursor: pointer;
+			}
+
+			.close-btn:hover {
+				background: #a0a0a0;
+			}
+
+			.resize-handle {
+				position: absolute;
+				right: 0;
+				bottom: 0;
+				width: 16px;
+				height: 16px;
+				cursor: nwse-resize;
+				background: repeating-linear-gradient(
+					135deg,
+					#c0c0c0,
+					#c0c0c0 2px,
+					#808080 2px,
+					#808080 4px
+				);
+			}
+
+			.window-content {
+				padding: 10px;
+				overflow: auto;
+				height: calc(100% - 20px);
+			}
+
+			/* Buttons */
+			.btn {
+				padding: 4px 12px;
+				background: #e0e0e0;
+				border: 2px solid;
+				border-color: #fff #808080 #808080 #fff;
+				cursor: pointer;
+				font-family: inherit;
+				font-size: 11px;
+				outline: none;
+			}
+
+			.btn:active {
+				border-color: #808080 #fff #fff #808080;
+				background: #c0c0c0;
+			}
+
+			.btn:focus {
+				outline: 1px dotted #000;
+				outline-offset: -4px;
+			}
+
+			/* Input fields */
+			input[type='text'],
+			textarea {
+				background: #fff;
+				border: 2px solid;
+				border-color: #808080 #fff #fff #808080;
+				padding: 2px 4px;
+				font-family: inherit;
+				font-size: 11px;
+				outline: none;
+			}
+
+			textarea {
+				resize: none;
+				width: 100%;
+				height: calc(100% - 40px);
+			}
+
+			/* Calculator specific */
+			#calculator-display {
+				background: #fff;
+				border: 2px solid;
+				border-color: #808080 #fff #fff #808080;
+				padding: 4px;
+				text-align: right;
+				font-size: 14px;
+				margin-bottom: 10px;
+				min-height: 24px;
+			}
+
+			.calc-buttons {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 4px;
+			}
+
+			.calc-btn {
+				padding: 8px;
+				font-size: 12px;
+			}
+
+			.calc-btn.wide {
+				grid-column: span 2;
+			}
+
+			/* Finder */
+			.folder-contents {
+				background: #fff;
+				border: 2px solid;
+				border-color: #808080 #fff #fff #808080;
+				height: calc(100% - 40px);
+				overflow: auto;
+				padding: 5px;
+			}
+
+			.folder-item {
+				padding: 4px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.folder-item:hover {
+				background: #e0e0e0;
+			}
+
+			.folder-item.selected {
+				background: #000;
+				color: #fff;
+			}
+
+			.folder-icon {
+				width: 16px;
+				height: 16px;
+				background: #ffd700;
+				border: 1px solid #000;
+				position: relative;
+			}
+
+			.file-icon {
+				width: 16px;
+				height: 16px;
+				background: #fff;
+				border: 1px solid #000;
+				position: relative;
+			}
+
+			/* Control Panel */
+			.control-group {
+				margin-bottom: 15px;
+				padding: 10px;
+				background: #e0e0e0;
+				border: 2px solid;
+				border-color: #808080 #fff #fff #808080;
+			}
+
+			.control-label {
+				font-weight: bold;
+				margin-bottom: 5px;
+			}
+
+			.slider {
+				width: 100%;
+				margin: 5px 0;
+			}
+
+			/* About This Mac */
+			.about-content {
+				text-align: center;
+				padding: 20px;
+			}
+
+			.about-logo {
+				width: 64px;
+				height: 64px;
+				margin: 0 auto 10px;
+				background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+				border-radius: 10px;
+			}
+
+			/* Alert Dialog */
+			.alert {
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				background: #c0c0c0;
+				border: 2px solid #000;
+				padding: 20px;
+				z-index: 20000;
+				min-width: 250px;
+				box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+				display: none;
+			}
+
+			.alert.visible {
+				display: block;
+			}
+
+			.alert-icon {
+				width: 32px;
+				height: 32px;
+				background: #ffd700;
+				border: 2px solid #000;
+				border-radius: 50%;
+				margin: 0 auto 10px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-weight: bold;
+				font-size: 20px;
+			}
+
+			.alert-message {
+				text-align: center;
+				margin-bottom: 15px;
+			}
+
+			.alert-buttons {
+				text-align: center;
+			}
+
+			/* Scrollbars */
+			::-webkit-scrollbar {
+				width: 16px;
+				height: 16px;
+			}
+
+			::-webkit-scrollbar-track {
+				background: #c0c0c0;
+				border: 1px solid #808080;
+			}
+
+			::-webkit-scrollbar-thumb {
+				background: #e0e0e0;
+				border: 2px solid;
+				border-color: #fff #808080 #808080 #fff;
+			}
+
+			::-webkit-scrollbar-corner {
+				background: #c0c0c0;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Menu Bar -->
+		<div id="menuBar">
+			<div
+				class="menu apple"
+				onclick="toggleMenu(this)"
+			>
+				🍎
+				<div class="dropdown">
+					<div
+						class="dropdown-item"
+						onclick="openAbout()"
+					>
+						About This Mac...
+					</div>
+					<div class="dropdown-item separator"></div>
+					<div
+						class="dropdown-item"
+						onclick="openControlPanel()"
+					>
+						Control Panel
+					</div>
+					<div class="dropdown-item">Calculator</div>
+					<div class="dropdown-item">SimpleText</div>
+					<div class="dropdown-item separator"></div>
+					<div
+						class="dropdown-item"
+						onclick="shutdown()"
+					>
+						Shut Down...
+					</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				onclick="toggleMenu(this)"
+			>
+				File
+				<div class="dropdown">
+					<div
+						class="dropdown-item"
+						onclick="newFolder()"
+					>
+						New Folder
+					</div>
+					<div class="dropdown-item">Open</div>
+					<div class="dropdown-item">Close</div>
+					<div class="dropdown-item separator"></div>
+					<div class="dropdown-item">Get Info</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				onclick="toggleMenu(this)"
+			>
+				Edit
+				<div class="dropdown">
+					<div class="dropdown-item">Undo</div>
+					<div class="dropdown-item separator"></div>
+					<div class="dropdown-item">Cut</div>
+					<div class="dropdown-item">Copy</div>
+					<div class="dropdown-item">Paste</div>
+					<div class="dropdown-item">Clear</div>
+					<div class="dropdown-item separator"></div>
+					<div class="dropdown-item">Select All</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				onclick="toggleMenu(this)"
+			>
+				View
+				<div class="dropdown">
+					<div class="dropdown-item">as Icons</div>
+					<div class="dropdown-item">as List</div>
+					<div class="dropdown-item separator"></div>
+					<div class="dropdown-item">Clean Up</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				onclick="toggleMenu(this)"
+			>
+				Special
+				<div class="dropdown">
+					<div class="dropdown-item">Empty Trash</div>
+					<div class="dropdown-item separator"></div>
+					<div class="dropdown-item">Restart</div>
+					<div class="dropdown-item">Shut Down</div>
+				</div>
+			</div>
+			<div id="clock"></div>
+		</div>
+
+		<!-- Desktop -->
+		<div id="desktop">
+			<!-- Desktop Icons -->
+			<div
+				class="desktop-icon"
+				style="top: 40px; left: 20px"
+				ondblclick="openFinder()"
+			>
+				<div
+					class="icon-img"
+					style="
+						background: linear-gradient(135deg, #e0e0e0 50%, #a0a0a0 50%);
+						border: 1px solid #000;
+					"
+				>
+					📁
+				</div>
+				<span>Macintosh HD</span>
+			</div>
+			<div
+				class="desktop-icon"
+				style="top: 40px; left: 100px"
+				ondblclick="openCalculator()"
+			>
+				<div
+					class="icon-img"
+					style="
+						background: #fff;
+						border: 1px solid #000;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					"
+				>
+					🔢
+				</div>
+				<span>Calculator</span>
+			</div>
+			<div
+				class="desktop-icon"
+				style="top: 40px; left: 180px"
+				ondblclick="openSimpleText()"
+			>
+				<div
+					class="icon-img"
+					style="
+						background: #fff;
+						border: 1px solid #000;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					"
+				>
+					📝
+				</div>
+				<span>SimpleText</span>
+			</div>
+			<div
+				class="desktop-icon"
+				style="top: 140px; left: 20px"
+				ondblclick="openClock()"
+			>
+				<div
+					class="icon-img"
+					style="
+						background: #e0e0e0;
+						border: 1px solid #000;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					"
+				>
+					🕐
+				</div>
+				<span>Clock</span>
+			</div>
+			<div
+				class="desktop-icon"
+				style="top: 140px; left: 100px"
+				ondblclick="showAlert('This is System 7.5!', 'Easter Egg')"
+			>
+				<div
+					class="icon-img"
+					style="
+						background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+						border: 1px solid #000;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					"
+				>
+					🎁
+				</div>
+				<span>Secret</span>
+			</div>
+			<div
+				class="desktop-icon"
+				style="position: absolute; bottom: 20px; right: 20px"
+			>
+				<div
+					class="icon-img"
+					style="
+						background: #808080;
+						border: 1px solid #000;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					"
+				>
+					🗑️
+				</div>
+				<span>Trash</span>
+			</div>
+		</div>
+
+		<!-- Finder Window -->
+		<div
+			id="finderWindow"
+			class="window"
+			style="width: 400px; height: 300px; top: 100px; left: 100px"
+		>
+			<div
+				class="title-bar"
+				onmousedown="startDrag(event, 'finderWindow')"
+			>
+				<div
+					class="close-btn"
+					onclick="closeWindow('finderWindow')"
+				></div>
+				<div class="title-bar-text">Macintosh HD</div>
+			</div>
+			<div class="window-content">
+				<div
+					class="folder-contents"
+					id="finderContents"
+				>
+					<div
+						class="folder-item"
+						ondblclick="openFolder('System Folder')"
+					>
+						<div class="folder-icon"></div>
+						<span>System Folder</span>
+					</div>
+					<div
+						class="folder-item"
+						ondblclick="openFolder('Applications')"
+					>
+						<div class="folder-icon"></div>
+						<span>Applications</span>
+					</div>
+					<div
+						class="folder-item"
+						ondblclick="openFolder('Documents')"
+					>
+						<div class="folder-icon"></div>
+						<span>Documents</span>
+					</div>
+					<div class="folder-item">
+						<div class="file-icon"></div>
+						<span>ReadMe</span>
+					</div>
+					<div class="folder-item">
+						<div class="file-icon"></div>
+						<span>System Info</span>
+					</div>
+				</div>
+			</div>
+			<div
+				class="resize-handle"
+				onmousedown="startResize(event, 'finderWindow')"
+			></div>
+		</div>
+
+		<!-- Calculator Window -->
+		<div
+			id="calculatorWindow"
+			class="window"
+			style="width: 220px; height: 280px; top: 150px; left: 200px"
+		>
+			<div
+				class="title-bar"
+				onmousedown="startDrag(event, 'calculatorWindow')"
+			>
+				<div
+					class="close-btn"
+					onclick="closeWindow('calculatorWindow')"
+				></div>
+				<div class="title-bar-text">Calculator</div>
+			</div>
+			<div class="window-content">
+				<div id="calculator-display">0</div>
+				<div class="calc-buttons">
+					<button
+						class="btn calc-btn"
+						onclick="clearCalc()"
+					>
+						C
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('±')"
+					>
+						±
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('%')"
+					>
+						%
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('/')"
+					>
+						÷
+					</button>
+
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('7')"
+					>
+						7
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('8')"
+					>
+						8
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('9')"
+					>
+						9
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('*')"
+					>
+						×
+					</button>
+
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('4')"
+					>
+						4
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('5')"
+					>
+						5
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('6')"
+					>
+						6
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('-')"
+					>
+						−
+					</button>
+
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('1')"
+					>
+						1
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('2')"
+					>
+						2
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('3')"
+					>
+						3
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('+')"
+					>
+						+
+					</button>
+
+					<button
+						class="btn calc-btn wide"
+						onclick="calcInput('0')"
+					>
+						0
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calcInput('.')"
+					>
+						.
+					</button>
+					<button
+						class="btn calc-btn"
+						onclick="calculate()"
+					>
+						=
+					</button>
+				</div>
+			</div>
+			<div
+				class="resize-handle"
+				onmousedown="startResize(event, 'calculatorWindow')"
+			></div>
+		</div>
+
+		<!-- SimpleText Window -->
+		<div
+			id="simpleTextWindow"
+			class="window"
+			style="width: 400px; height: 300px; top: 120px; left: 300px"
+		>
+			<div
+				class="title-bar"
+				onmousedown="startDrag(event, 'simpleTextWindow')"
+			>
+				<div
+					class="close-btn"
+					onclick="closeWindow('simpleTextWindow')"
+				></div>
+				<div class="title-bar-text">Untitled</div>
+			</div>
+			<div class="window-content">
+				<textarea
+					placeholder="Type here..."
+					style="font-family: Monaco, monospace"
+				></textarea>
+				<div style="margin-top: 10px">
+					<button
+						class="btn"
+						onclick="saveText()"
+					>
+						Save
+					</button>
+					<button
+						class="btn"
+						onclick="clearText()"
+					>
+						Clear
+					</button>
+				</div>
+			</div>
+			<div
+				class="resize-handle"
+				onmousedown="startResize(event, 'simpleTextWindow')"
+			></div>
+		</div>
+
+		<!-- About This Mac Window -->
+		<div
+			id="aboutWindow"
+			class="window"
+			style="width: 320px; height: 200px; top: 100px; left: 250px"
+		>
+			<div
+				class="title-bar"
+				onmousedown="startDrag(event, 'aboutWindow')"
+			>
+				<div
+					class="close-btn"
+					onclick="closeWindow('aboutWindow')"
+				></div>
+				<div class="title-bar-text">About This Mac</div>
+			</div>
+			<div class="window-content">
+				<div class="about-content">
+					<div class="about-logo"></div>
+					<p><strong>System 7.5</strong></p>
+					<p>© Apple Computer, Inc. 1996</p>
+					<p style="margin-top: 10px; font-size: 10px">
+						Memory: 8 MB<br />
+						Processor: PowerPC 601<br />
+						Version: 7.5.3
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Control Panel Window -->
+		<div
+			id="controlPanelWindow"
+			class="window"
+			style="width: 350px; height: 400px; top: 80px; left: 400px"
+		>
+			<div
+				class="title-bar"
+				onmousedown="startDrag(event, 'controlPanelWindow')"
+			>
+				<div
+					class="close-btn"
+					onclick="closeWindow('controlPanelWindow')"
+				></div>
+				<div class="title-bar-text">Control Panel</div>
+			</div>
+			<div class="window-content">
+				<div class="control-group">
+					<div class="control-label">Sound</div>
+					<input
+						type="range"
+						class="slider"
+						min="0"
+						max="100"
+						value="75"
+						onchange="updateVolume(this.value)"
+					/>
+					<span id="volumeLevel">75%</span>
+				</div>
+				<div class="control-group">
+					<div class="control-label">Mouse Tracking</div>
+					<input
+						type="range"
+						class="slider"
+						min="1"
+						max="10"
+						value="5"
+					/>
+				</div>
+				<div class="control-group">
+					<div class="control-label">Display</div>
+					<label
+						><input
+							type="radio"
+							name="colors"
+							checked
+						/>
+						256 Colors</label
+					><br />
+					<label
+						><input
+							type="radio"
+							name="colors"
+						/>
+						Thousands</label
+					><br />
+					<label
+						><input
+							type="radio"
+							name="colors"
+						/>
+						Millions</label
+					>
+				</div>
+				<div class="control-group">
+					<div class="control-label">Date & Time</div>
+					<p id="systemDate"></p>
+					<button
+						class="btn"
+						onclick="setDateTime()"
+					>
+						Set Date/Time...
+					</button>
+				</div>
+			</div>
+			<div
+				class="resize-handle"
+				onmousedown="startResize(event, 'controlPanelWindow')"
+			></div>
+		</div>
+
+		<!-- Clock Window -->
+		<div
+			id="clockWindow"
+			class="window"
+			style="width: 200px; height: 240px; top: 200px; left: 450px"
+		>
+			<div
+				class="title-bar"
+				onmousedown="startDrag(event, 'clockWindow')"
+			>
+				<div
+					class="close-btn"
+					onclick="closeWindow('clockWindow')"
+				></div>
+				<div class="title-bar-text">Clock</div>
+			</div>
+			<div
+				class="window-content"
+				style="
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+				"
+			>
+				<canvas
+					id="analogClock"
+					width="150"
+					height="150"
+				></canvas>
+				<div
+					id="digitalTime"
+					style="margin-top: 10px; font-size: 16px; font-weight: bold"
+				></div>
+			</div>
+			<div
+				class="resize-handle"
+				onmousedown="startResize(event, 'clockWindow')"
+			></div>
+		</div>
+
+		<!-- Alert Dialog -->
+		<div
+			id="alertDialog"
+			class="alert"
+		>
+			<div class="alert-icon">!</div>
+			<div
+				class="alert-message"
+				id="alertMessage"
+			>
+				Alert Message
+			</div>
+			<div class="alert-buttons">
+				<button
+					class="btn"
+					onclick="closeAlert()"
+				>
+					OK
+				</button>
+			</div>
+		</div>
+
+		<script>
+			// Global variables
+			let activeWindow = null
+			let draggedWindow = null
+			let dragOffset = { x: 0, y: 0 }
+			let resizedWindow = null
+			let resizeStart = { x: 0, y: 0, width: 0, height: 0 }
+			let calcDisplay = '0'
+			let calcOperator = null
+			let calcPrevious = null
+			let calcNewNumber = true
+			let windowZIndex = 100
+
+			// Initialize
+			document.addEventListener('DOMContentLoaded', function () {
+				updateClock()
+				setInterval(updateClock, 1000)
+				playStartupSound()
+				updateSystemDate()
+				drawAnalogClock()
+				setInterval(drawAnalogClock, 1000)
+
+				// Desktop icon selection
+				document.querySelectorAll('.desktop-icon').forEach((icon) => {
+					icon.addEventListener('click', function (e) {
+						e.stopPropagation()
+						document
+							.querySelectorAll('.desktop-icon')
+							.forEach((i) => i.classList.remove('selected'))
+						this.classList.add('selected')
+					})
+				})
+
+				// Click on desktop to deselect
+				document
+					.getElementById('desktop')
+					.addEventListener('click', function () {
+						document
+							.querySelectorAll('.desktop-icon')
+							.forEach((i) => i.classList.remove('selected'))
+						closeAllMenus()
+					})
+
+				// Make icons draggable
+				document.querySelectorAll('.desktop-icon').forEach((icon) => {
+					icon.addEventListener('mousedown', function (e) {
+						if (e.target.closest('.desktop-icon')) {
+							const startX = e.pageX - icon.offsetLeft
+							const startY = e.pageY - icon.offsetTop
+
+							function moveIcon(e) {
+								icon.style.left = e.pageX - startX + 'px'
+								icon.style.top = e.pageY - startY + 'px'
+							}
+
+							function stopMove() {
+								document.removeEventListener('mousemove', moveIcon)
+								document.removeEventListener('mouseup', stopMove)
+							}
+
+							document.addEventListener('mousemove', moveIcon)
+							document.addEventListener('mouseup', stopMove)
+						}
+					})
+				})
+
+				// Keyboard shortcuts
+				document.addEventListener('keydown', function (e) {
+					if (e.metaKey || e.ctrlKey) {
+						switch (e.key) {
+							case 'q':
+								e.preventDefault()
+								shutdown()
+								break
+							case 'w':
+								e.preventDefault()
+								if (activeWindow) {
+									closeWindow(activeWindow.id)
+								}
+								break
+							case 'a':
+								e.preventDefault()
+								// Select all in active text field
+								break
+						}
+					}
+				})
+			})
+
+			// Clock functionality
+			function updateClock() {
+				const now = new Date()
+				const time = now.toLocaleTimeString('en-US', {
+					hour: '2-digit',
+					minute: '2-digit',
+					hour12: true,
+				})
+				document.getElementById('clock').textContent = time
+				document.getElementById('digitalTime').textContent = time
+			}
+
+			function drawAnalogClock() {
+				const canvas = document.getElementById('analogClock')
+				if (!canvas) return
+
+				const ctx = canvas.getContext('2d')
+				const radius = 70
+				const centerX = 75
+				const centerY = 75
+
+				// Clear canvas
+				ctx.clearRect(0, 0, 150, 150)
+
+				// Draw clock face
+				ctx.beginPath()
+				ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+				ctx.fillStyle = '#e0e0e0'
+				ctx.fill()
+				ctx.strokeStyle = '#000'
+				ctx.lineWidth = 2
+				ctx.stroke()
+
+				// Draw numbers
+				ctx.font = 'bold 12px Chicago, Arial'
+				ctx.fillStyle = '#000'
+				ctx.textAlign = 'center'
+				ctx.textBaseline = 'middle'
+
+				for (let num = 1; num <= 12; num++) {
+					const angle = (num * 30 - 90) * (Math.PI / 180)
+					const x = centerX + Math.cos(angle) * (radius - 15)
+					const y = centerY + Math.sin(angle) * (radius - 15)
+					ctx.fillText(num.toString(), x, y)
+				}
+
+				// Get current time
+				const now = new Date()
+				let hours = now.getHours() % 12
+				let minutes = now.getMinutes()
+				let seconds = now.getSeconds()
+
+				// Draw hour hand
+				const hourAngle = (hours * 30 + minutes * 0.5 - 90) * (Math.PI / 180)
+				ctx.beginPath()
+				ctx.moveTo(centerX, centerY)
+				ctx.lineTo(
+					centerX + Math.cos(hourAngle) * (radius - 30),
+					centerY + Math.sin(hourAngle) * (radius - 30)
+				)
+				ctx.strokeStyle = '#000'
+				ctx.lineWidth = 4
+				ctx.stroke()
+
+				// Draw minute hand
+				const minuteAngle = (minutes * 6 - 90) * (Math.PI / 180)
+				ctx.beginPath()
+				ctx.moveTo(centerX, centerY)
+				ctx.lineTo(
+					centerX + Math.cos(minuteAngle) * (radius - 20),
+					centerY + Math.sin(minuteAngle) * (radius - 20)
+				)
+				ctx.strokeStyle = '#000'
+				ctx.lineWidth = 3
+				ctx.stroke()
+
+				// Draw second hand
+				const secondAngle = (seconds * 6 - 90) * (Math.PI / 180)
+				ctx.beginPath()
+				ctx.moveTo(centerX, centerY)
+				ctx.lineTo(
+					centerX + Math.cos(secondAngle) * (radius - 15),
+					centerY + Math.sin(secondAngle) * (radius - 15)
+				)
+				ctx.strokeStyle = '#ff0000'
+				ctx.lineWidth = 1
+				ctx.stroke()
+
+				// Draw center dot
+				ctx.beginPath()
+				ctx.arc(centerX, centerY, 3, 0, 2 * Math.PI)
+				ctx.fillStyle = '#000'
+				ctx.fill()
+			}
+
+			// Menu functionality
+			function toggleMenu(menu) {
+				const wasActive = menu.classList.contains('active')
+				closeAllMenus()
+				if (!wasActive) {
+					menu.classList.add('active')
+				}
+				event.stopPropagation()
+			}
+
+			function closeAllMenus() {
+				document
+					.querySelectorAll('.menu')
+					.forEach((m) => m.classList.remove('active'))
+			}
+
+			// Window management
+			function openWindow(windowId) {
+				const window = document.getElementById(windowId)
+				window.classList.add('visible')
+				setActiveWindow(window)
+				closeAllMenus()
+			}
+
+			function closeWindow(windowId) {
+				const window = document.getElementById(windowId)
+				window.classList.remove('visible')
+				if (activeWindow === window) {
+					activeWindow = null
+				}
+			}
+
+			function setActiveWindow(window) {
+				if (activeWindow) {
+					activeWindow.classList.remove('active')
+				}
+				activeWindow = window
+				window.classList.add('active')
+				window.style.zIndex = ++windowZIndex
+			}
+
+			// Window dragging
+			function startDrag(e, windowId) {
+				const window = document.getElementById(windowId)
+				setActiveWindow(window)
+				draggedWindow = window
+				dragOffset.x = e.clientX - window.offsetLeft
+				dragOffset.y = e.clientY - window.offsetTop
+
+				document.addEventListener('mousemove', drag)
+				document.addEventListener('mouseup', stopDrag)
+				e.preventDefault()
+			}
+
+			function drag(e) {
+				if (draggedWindow) {
+					draggedWindow.style.left = e.clientX - dragOffset.x + 'px'
+					draggedWindow.style.top = e.clientY - dragOffset.y + 'px'
+				}
+			}
+
+			function stopDrag() {
+				draggedWindow = null
+				document.removeEventListener('mousemove', drag)
+				document.removeEventListener('mouseup', stopDrag)
+			}
+
+			// Window resizing
+			function startResize(e, windowId) {
+				const window = document.getElementById(windowId)
+				resizedWindow = window
+				resizeStart.x = e.clientX
+				resizeStart.y = e.clientY
+				resizeStart.width = window.offsetWidth
+				resizeStart.height = window.offsetHeight
+
+				document.addEventListener('mousemove', resize)
+				document.addEventListener('mouseup', stopResize)
+				e.preventDefault()
+				e.stopPropagation()
+			}
+
+			function resize(e) {
+				if (resizedWindow) {
+					const newWidth = Math.max(
+						200,
+						resizeStart.width + (e.clientX - resizeStart.x)
+					)
+					const newHeight = Math.max(
+						100,
+						resizeStart.height + (e.clientY - resizeStart.y)
+					)
+					resizedWindow.style.width = newWidth + 'px'
+					resizedWindow.style.height = newHeight + 'px'
+				}
+			}
+
+			function stopResize() {
+				resizedWindow = null
+				document.removeEventListener('mousemove', resize)
+				document.removeEventListener('mouseup', stopResize)
+			}
+
+			// Application launchers
+			function openFinder() {
+				openWindow('finderWindow')
+			}
+
+			function openCalculator() {
+				openWindow('calculatorWindow')
+			}
+
+			function openSimpleText() {
+				openWindow('simpleTextWindow')
+			}
+
+			function openAbout() {
+				openWindow('aboutWindow')
+				closeAllMenus()
+			}
+
+			function openControlPanel() {
+				openWindow('controlPanelWindow')
+				closeAllMenus()
+			}
+
+			function openClock() {
+				openWindow('clockWindow')
+				drawAnalogClock()
+			}
+
+			// Calculator functionality
+			function calcInput(value) {
+				if (value >= '0' && value <= '9') {
+					if (calcNewNumber) {
+						calcDisplay = value
+						calcNewNumber = false
+					} else {
+						calcDisplay = calcDisplay === '0' ? value : calcDisplay + value
+					}
+				} else if (value === '.') {
+					if (calcNewNumber) {
+						calcDisplay = '0.'
+						calcNewNumber = false
+					} else if (calcDisplay.indexOf('.') === -1) {
+						calcDisplay += '.'
+					}
+				} else if (value === '±') {
+					calcDisplay = (parseFloat(calcDisplay) * -1).toString()
+				} else if (value === '%') {
+					calcDisplay = (parseFloat(calcDisplay) / 100).toString()
+				} else {
+					if (calcOperator && !calcNewNumber) {
+						calculate()
+					}
+					calcOperator = value
+					calcPrevious = parseFloat(calcDisplay)
+					calcNewNumber = true
+				}
+				updateCalcDisplay()
+			}
+
+			function calculate() {
+				if (calcOperator && calcPrevious !== null) {
+					const current = parseFloat(calcDisplay)
+					let result
+					switch (calcOperator) {
+						case '+':
+							result = calcPrevious + current
+							break
+						case '-':
+							result = calcPrevious - current
+							break
+						case '*':
+							result = calcPrevious * current
+							break
+						case '/':
+							result = current !== 0 ? calcPrevious / current : 'Error'
+							break
+					}
+					calcDisplay = result.toString()
+					calcOperator = null
+					calcPrevious = null
+					calcNewNumber = true
+					updateCalcDisplay()
+				}
+			}
+
+			function clearCalc() {
+				calcDisplay = '0'
+				calcOperator = null
+				calcPrevious = null
+				calcNewNumber = true
+				updateCalcDisplay()
+			}
+
+			function updateCalcDisplay() {
+				document.getElementById('calculator-display').textContent = calcDisplay
+			}
+
+			// SimpleText functionality
+			function saveText() {
+				const text = document.querySelector('#simpleTextWindow textarea').value
+				showAlert('Document saved!', 'SimpleText')
+			}
+
+			function clearText() {
+				document.querySelector('#simpleTextWindow textarea').value = ''
+			}
+
+			// Finder functionality
+			function openFolder(folderName) {
+				const contents = document.getElementById('finderContents')
+				contents.innerHTML = `
+                <div class="folder-item" ondblclick="goBack()">
+                    <div class="folder-icon" style="background: #c0c0c0;"></div>
+                    <span>..</span>
+                </div>
+                <div class="folder-item">
+                    <div class="file-icon"></div>
+                    <span>${folderName} File 1</span>
+                </div>
+                <div class="folder-item">
+                    <div class="file-icon"></div>
+                    <span>${folderName} File 2</span>
+                </div>
+            `
+				document.querySelector('#finderWindow .title-bar-text').textContent =
+					folderName
+			}
+
+			function goBack() {
+				location.reload() // Simple way to reset
+			}
+
+			function newFolder() {
+				showAlert('New Folder created!', 'Finder')
+				closeAllMenus()
+			}
+
+			// Control Panel functionality
+			function updateVolume(value) {
+				document.getElementById('volumeLevel').textContent = value + '%'
+			}
+
+			function updateSystemDate() {
+				const now = new Date()
+				document.getElementById('systemDate').textContent =
+					now.toLocaleDateString() + ' ' + now.toLocaleTimeString()
+			}
+
+			function setDateTime() {
+				showAlert('Date & Time settings not available in demo', 'Control Panel')
+			}
+
+			// Alert functionality
+			function showAlert(message, title) {
+				document.getElementById('alertMessage').textContent = message
+				document.getElementById('alertDialog').classList.add('visible')
+			}
+
+			function closeAlert() {
+				document.getElementById('alertDialog').classList.remove('visible')
+			}
+
+			// System functions
+			function shutdown() {
+				if (confirm('Are you sure you want to shut down?')) {
+					document.body.innerHTML =
+						'<div style="background: #000; color: #fff; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: Chicago, Arial;">It is now safe to turn off your computer.</div>'
+				}
+				closeAllMenus()
+			}
+
+			function playStartupSound() {
+				// Simulate startup sound with visual feedback
+				const audio = new Audio(
+					'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQAAAAA='
+				)
+				audio.play().catch(() => {}) // Silent fail if audio blocked
+			}
+
+			// Window click to focus
+			document.querySelectorAll('.window').forEach((window) => {
+				window.addEventListener('mousedown', function () {
+					setActiveWindow(this)
+				})
+			})
+		</script>
+	</body>
+</html>

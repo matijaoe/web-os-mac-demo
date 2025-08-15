@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Mac OS System 7.5 Simulation</title>
+		<style>
+			/* Base styles */
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+				font-smooth: never;
+				-webkit-font-smoothing: none;
+			}
+
+			body {
+				font-family: 'Lucida Grande', 'Helvetica', 'Arial', sans-serif;
+				font-size: 12px;
+				background-color: #909090;
+				overflow: hidden;
+				height: 100vh;
+				cursor: default;
+				user-select: none;
+			}
+
+			/* Desktop background pattern */
+			#desktop {
+				position: fixed;
+				top: 20px;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background-color: #909090;
+				background-image: linear-gradient(45deg, #808080 25%, transparent 25%),
+					linear-gradient(-45deg, #808080 25%, transparent 25%),
+					linear-gradient(45deg, transparent 75%, #808080 75%),
+					linear-gradient(-45deg, transparent 75%, #808080 75%);
+				background-size: 16px 16px;
+				background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+			}
+
+			/* Menu bar */
+			#menu-bar {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 20px;
+				background: linear-gradient(to bottom, #868686, #6d6d6d);
+				border-bottom: 1px solid #000;
+				display: flex;
+				align-items: center;
+				padding: 0 5px;
+				z-index: 1000;
+			}
+
+			.menu-item {
+				padding: 0 8px;
+				color: #fff;
+				text-shadow: 1px 1px 0 #000;
+				position: relative;
+				height: 100%;
+				display: flex;
+				align-items: center;
+			}
+
+			.menu-item:hover {
+				background: linear-gradient(to bottom, #5e5e5e, #464646);
+			}
+
+			.apple-logo {
+				font-weight: bold;
+				font-size: 14px;
+				margin-right: 10px;
+			}
+
+			/* Windows */
+			.window {
+				position: absolute;
+				background-color: #c0c0c0;
+				border: 2px solid;
+				border-top-color: #fff;
+				border-left-color: #fff;
+				border-right-color: #808080;
+				border-bottom-color: #808080;
+				box-shadow: 1px 1px 0 #000;
+				min-width: 200px;
+				min-height: 150px;
+				z-index: 10;
+				display: none;
+			}
+
+			.window.active {
+				z-index: 20;
+			}
+
+			.window-title-bar {
+				background: linear-gradient(to right, #0a246a, #a6caf0);
+				color: #fff;
+				padding: 2px 4px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-weight: bold;
+				text-shadow: 1px 1px 0 #000;
+				cursor: move;
+			}
+
+			.window-title {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.window-controls {
+				display: flex;
+				gap: 2px;
+			}
+
+			.window-btn {
+				width: 16px;
+				height: 14px;
+				background-color: #c0c0c0;
+				border: 1px solid;
+				border-top-color: #fff;
+				border-left-color: #fff;
+				border-right-color: #808080;
+				border-bottom-color: #808080;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-size: 12px;
+				cursor: pointer;
+			}
+
+			.window-btn:hover {
+				background-color: #a0a0a0;
+			}
+
+			.close-btn::before {
+				content: '×';
+				position: relative;
+				top: -1px;
+			}
+
+			.minimize-btn::before {
+				content: '-';
+			}
+
+			.zoom-btn::before {
+				content: '+';
+			}
+
+			.window-content {
+				padding: 8px;
+				height: calc(100% - 22px);
+				overflow: auto;
+			}
+
+			/* Icons */
+			.icon {
+				position: absolute;
+				width: 64px;
+				text-align: center;
+				cursor: pointer;
+				padding: 2px;
+			}
+
+			.icon.selected {
+				background-color: rgba(0, 0, 255, 0.3);
+				border: 1px dotted #000;
+			}
+
+			.icon-img {
+				width: 32px;
+				height: 32px;
+				margin: 0 auto;
+				background-color: #fff;
+				border: 1px solid #000;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-size: 24px;
+			}
+
+			.icon-label {
+				margin-top: 2px;
+				font-size: 10px;
+				color: #fff;
+				text-shadow: 1px 1px 0 #000;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			/* Finder */
+			#finder-content {
+				display: flex;
+				height: 100%;
+			}
+
+			#finder-sidebar {
+				width: 120px;
+				background-color: #a0a0a0;
+				border-right: 1px solid #808080;
+				padding: 5px;
+			}
+
+			#finder-main {
+				flex: 1;
+				padding: 5px;
+			}
+
+			.folder-item {
+				display: flex;
+				align-items: center;
+				padding: 2px;
+				cursor: pointer;
+			}
+
+			.folder-item:hover {
+				background-color: rgba(0, 0, 255, 0.3);
+			}
+
+			.folder-icon {
+				width: 16px;
+				height: 16px;
+				margin-right: 4px;
+				background-color: #fff;
+				border: 1px solid #000;
+			}
+
+			/* Calculator */
+			.calculator {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 2px;
+				width: 120px;
+			}
+
+			.calculator-display {
+				grid-column: span 4;
+				height: 20px;
+				background-color: #fff;
+				border: 1px solid #000;
+				padding: 2px;
+				text-align: right;
+				font-family: monospace;
+				margin-bottom: 2px;
+			}
+
+			.calc-btn {
+				height: 20px;
+				background-color: #c0c0c0;
+				border: 1px solid;
+				border-top-color: #fff;
+				border-left-color: #fff;
+				border-right-color: #808080;
+				border-bottom-color: #808080;
+				cursor: pointer;
+			}
+
+			.calc-btn:active {
+				border-top-color: #808080;
+				border-left-color: #808080;
+				border-right-color: #fff;
+				border-bottom-color: #fff;
+			}
+
+			/* SimpleText */
+			#simpletext-content {
+				width: 100%;
+				height: 100%;
+				border: 1px solid #808080;
+				padding: 5px;
+				background-color: #fff;
+				font-family: 'Times New Roman', serif;
+				font-size: 14px;
+				overflow: auto;
+				resize: none;
+			}
+
+			/* Control Panel */
+			.control-panel-item {
+				display: flex;
+				align-items: center;
+				margin-bottom: 8px;
+			}
+
+			.control-panel-label {
+				width: 100px;
+			}
+
+			.control-panel-input {
+				width: 150px;
+			}
+
+			/* About This Mac */
+			#about-content {
+				text-align: center;
+			}
+
+			#about-logo {
+				font-size: 48px;
+				margin: 10px 0;
+			}
+
+			/* Clock */
+			#clock-face {
+				width: 100px;
+				height: 100px;
+				border: 2px solid #000;
+				border-radius: 50%;
+				position: relative;
+				margin: 0 auto;
+				background-color: #fff;
+			}
+
+			.clock-hand {
+				position: absolute;
+				background-color: #000;
+				transform-origin: bottom center;
+				left: 50%;
+				bottom: 50%;
+			}
+
+			#hour-hand {
+				height: 30px;
+				width: 3px;
+				margin-left: -1.5px;
+			}
+
+			#minute-hand {
+				height: 40px;
+				width: 2px;
+				margin-left: -1px;
+			}
+
+			#second-hand {
+				height: 45px;
+				width: 1px;
+				margin-left: -0.5px;
+				background-color: #f00;
+			}
+
+			/* Dialog boxes */
+			.dialog {
+				position: absolute;
+				background-color: #c0c0c0;
+				border: 2px solid;
+				border-top-color: #fff;
+				border-left-color: #fff;
+				border-right-color: #808080;
+				border-bottom-color: #808080;
+				box-shadow: 2px 2px 0 #000;
+				padding: 10px;
+				z-index: 100;
+				display: none;
+			}
+
+			.dialog-title {
+				font-weight: bold;
+				margin-bottom: 10px;
+			}
+
+			.dialog-buttons {
+				display: flex;
+				justify-content: flex-end;
+				margin-top: 15px;
+				gap: 5px;
+			}
+
+			.dialog-btn {
+				min-width: 70px;
+				height: 20px;
+				background-color: #c0c0c0;
+				border: 1px solid;
+				border-top-color: #fff;
+				border-left-color: #fff;
+				border-right-color: #808080;
+				border-bottom-color: #808080;
+				cursor: pointer;
+			}
+
+			.dialog-btn:active {
+				border-top-color: #808080;
+				border-left-color: #808080;
+				border-right-color: #fff;
+				border-bottom-color: #fff;
+			}
+
+			/* Cursors */
+			body {
+				cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="black"/><circle cx="8" cy="8" r="5" fill="white"/></svg>')
+						8 8,
+					auto;
+			}
+
+			.pointer-cursor {
+				cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M1,1 L12,12 M1,12 L12,1" stroke="black" stroke-width="2"/></svg>')
+						8 8,
+					pointer;
+			}
+
+			.text-cursor {
+				cursor: text;
+			}
+
+			/* Progress bar */
+			.progress-bar {
+				height: 16px;
+				border: 1px solid #808080;
+				background-color: #fff;
+				position: relative;
+				margin: 10px 0;
+			}
+
+			.progress-fill {
+				height: 100%;
+				background: linear-gradient(to bottom, #0a246a, #a6caf0);
+				width: 0%;
+			}
+
+			/* Easter egg */
+			#happy-mac {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: #000;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				color: #fff;
+				font-size: 24px;
+				z-index: 2000;
+				display: none;
+			}
+
+			#happy-mac-icon {
+				font-size: 64px;
+				margin-bottom: 20px;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Menu Bar -->
+		<div id="menu-bar">
+			<div class="menu-item apple-logo">🍎</div>
+			<div class="menu-item">File</div>
+			<div class="menu-item">Edit</div>
+			<div class="menu-item">View</div>
+			<div class="menu-item">Special</div>
+			<div style="flex: 1"></div>
+			<div id="clock-display">12:00:00 PM</div>
+		</div>
+
+		<!-- Desktop -->
+		<div id="desktop">
+			<!-- Desktop Icons -->
+			<div
+				class="icon"
+				style="top: 30px; left: 20px"
+				data-app="finder"
+			>
+				<div class="icon-img">📁</div>
+				<div class="icon-label">Macintosh HD</div>
+			</div>
+			<div
+				class="icon"
+				style="top: 30px; left: 100px"
+				data-app="trash"
+			>
+				<div class="icon-img">🗑️</div>
+				<div class="icon-label">Trash</div>
+			</div>
+			<div
+				class="icon"
+				style="top: 100px; left: 20px"
+				data-app="calculator"
+			>
+				<div class="icon-img">🧮</div>
+				<div class="icon-label">Calculator</div>
+			</div>
+			<div
+				class="icon"
+				style="top: 100px; left: 100px"
+				data-app="simpletext"
+			>
+				<div class="icon-img">📝</div>
+				<div class="icon-label">SimpleText</div>
+			</div>
+			<div
+				class="icon"
+				style="top: 170px; left: 20px"
+				data-app="controlpanel"
+			>
+				<div class="icon-img">⚙️</div>
+				<div class="icon-label">Control Panel</div>
+			</div>
+
+			<!-- Windows -->
+			<div
+				id="finder-window"
+				class="window"
+				style="width: 400px; height: 300px; top: 100px; left: 200px"
+			>
+				<div class="window-title-bar">
+					<div class="window-title">Macintosh HD</div>
+					<div class="window-controls">
+						<div class="window-btn close-btn"></div>
+						<div class="window-btn minimize-btn"></div>
+						<div class="window-btn zoom-btn"></div>
+					</div>
+				</div>
+				<div class="window-content">
+					<div id="finder-content">
+						<div id="finder-sidebar">
+							<div class="folder-item">
+								<div class="folder-icon"></div>
+								<div>Applications</div>
+							</div>
+							<div class="folder-item">
+								<div class="folder-icon"></div>
+								<div>System Folder</div>
+							</div>
+							<div class="folder-item">
+								<div class="folder-icon"></div>
+								<div>Documents</div>
+							</div>
+						</div>
+						<div id="finder-main">
+							<div style="display: flex; flex-wrap: wrap">
+								<div
+									class="icon"
+									style="margin: 5px"
+								>
+									<div class="icon-img">📄</div>
+								</div>
+								<div
+									class="icon"
+									style="margin: 5px"
+								>
+									<div class="icon-img">📄</div>
+								</div>
+								<div
+									class="icon"
+									style="margin: 5px"
+								>
+									<div class="icon-img">📄</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div
+				id="calculator-window"
+				class="window"
+				style="width: 150px; height: 180px; top: 150px; left: 300px"
+			>
+				<div class="window-title-bar">
+					<div class="window-title">Calculator</div>
+					<div class="window-controls">
+						<div class="window-btn close-btn"></div>
+						<div class="window-btn minimize-btn"></div>
+						<div class="window-btn zoom-btn"></div>
+					</div>
+				</div>
+				<div class="window-content">
+					<div class="calculator">
+						<div
+							class="calculator-display"
+							id="calc-display"
+						>
+							0
+						</div>
+						<button
+							class="calc-btn"
+							data-value="7"
+						>
+							7
+						</button>
+						<button
+							class="calc-btn"
+							data-value="8"
+						>
+							8
+						</button>
+						<button
+							class="calc-btn"
+							data-value="9"
+						>
+							9
+						</button>
+						<button
+							class="calc-btn"
+							data-value="/"
+						>
+							/
+						</button>
+						<button
+							class="calc-btn"
+							data-value="4"
+						>
+							4
+						</button>
+						<button
+							class="calc-btn"
+							data-value="5"
+						>
+							5
+						</button>
+						<button
+							class="calc-btn"
+							data-value="6"
+						>
+							6
+						</button>
+						<button
+							class="calc-btn"
+							data-value="*"
+						>
+							×
+						</button>
+						<button
+							class="calc-btn"
+							data-value="1"
+						>
+							1
+						</button>
+						<button
+							class="calc-btn"
+							data-value="2"
+						>
+							2
+						</button>
+						<button
+							class="calc-btn"
+							data-value="3"
+						>
+							3
+						</button>
+						<button
+							class="calc-btn"
+							data-value="-"
+						>
+							-
+						</button>
+						<button
+							class="calc-btn"
+							data-value="0"
+						>
+							0
+						</button>
+						<button
+							class="calc-btn"
+							data-value="."
+						>
+							.
+						</button>
+						<button
+							class="calc-btn"
+							data-value="="
+						>
+							=
+						</button>
+						<button
+							class="calc-btn"
+							data-value="+"
+						>
+							+
+						</button>
+						<button
+							class="calc-btn"
+							style="grid-column: span 2"
+							data-value="C"
+						>
+							C
+						</button>
+						<button
+							class="calc-btn"
+							data-value="CE"
+						>
+							CE
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<div
+				id="simpletext-window"
+				class="window"
+				style="width: 400px; height: 300px; top: 200px; left: 150px"
+			>
+				<div class="window-title-bar">
+					<div class="window-title">Untitled</div>
+					<div class="window-controls">
+						<div class="window-btn close-btn"></div>
+						<div class="window-btn minimize-btn"></div>
+						<div class="window-btn zoom-btn"></div>
+					</div>
+				</div>
+				<div class="window-content">
+					<textarea id="simpletext-content">
+Welcome to SimpleText!
+
+This is a basic text editor. You can type anything you want here.
+
+System 7.5 was released in 1996 and was a significant upgrade to the Mac OS, featuring improved performance and new technologies like QuickDraw GX and OpenDoc.</textarea
+					>
+				</div>
+			</div>
+
+			<div
+				id="controlpanel-window"
+				class="window"
+				style="width: 300px; height: 200px; top: 250px; left: 400px"
+			>
+				<div class="window-title-bar">
+					<div class="window-title">Control Panel</div>
+					<div class="window-controls">
+						<div class="window-btn close-btn"></div>
+						<div class="window-btn minimize-btn"></div>
+						<div class="window-btn zoom-btn"></div>
+					</div>
+				</div>
+				<div class="window-content">
+					<div class="control-panel-item">
+						<div class="control-panel-label">Desktop Pattern:</div>
+						<select
+							class="control-panel-input"
+							id="desktop-pattern"
+						>
+							<option value="default">Default</option>
+							<option value="solid">Solid Gray</option>
+							<option value="dense">Dense Pattern</option>
+						</select>
+					</div>
+					<div class="control-panel-item">
+						<div class="control-panel-label">Clock Format:</div>
+						<select
+							class="control-panel-input"
+							id="clock-format"
+						>
+							<option value="analog">Analog</option>
+							<option value="digital">Digital</option>
+						</select>
+					</div>
+					<div class="control-panel-item">
+						<div class="control-panel-label">Startup Sound:</div>
+						<input
+							class="control-panel-input"
+							type="checkbox"
+							id="startup-sound"
+							checked
+						/>
+					</div>
+					<div class="progress-bar">
+						<div
+							class="progress-fill"
+							id="memory-bar"
+						></div>
+					</div>
+					<div style="text-align: center">Memory: 8MB installed</div>
+				</div>
+			</div>
+
+			<div
+				id="about-window"
+				class="window"
+				style="width: 300px; height: 200px; top: 150px; left: 400px"
+			>
+				<div class="window-title-bar">
+					<div class="window-title">About This Mac</div>
+					<div class="window-controls">
+						<div class="window-btn close-btn"></div>
+						<div class="window-btn minimize-btn"></div>
+						<div class="window-btn zoom-btn"></div>
+					</div>
+				</div>
+				<div class="window-content">
+					<div id="about-content">
+						<div id="about-logo">🖥️</div>
+						<div style="font-weight: bold">Mac OS System 7.5</div>
+						<div>Version 7.5.3</div>
+						<div style="margin-top: 15px">© 1996 Apple Computer, Inc.</div>
+						<div>All Rights Reserved</div>
+						<div style="margin-top: 15px">
+							This computer has a 33MHz processor
+						</div>
+						<div>and 8MB of RAM</div>
+					</div>
+				</div>
+			</div>
+
+			<div
+				id="clock-window"
+				class="window"
+				style="width: 150px; height: 150px; top: 350px; left: 500px"
+			>
+				<div class="window-title-bar">
+					<div class="window-title">Clock</div>
+					<div class="window-controls">
+						<div class="window-btn close-btn"></div>
+						<div class="window-btn minimize-btn"></div>
+						<div class="window-btn zoom-btn"></div>
+					</div>
+				</div>
+				<div class="window-content">
+					<div id="clock-face">
+						<div id="hour-hand"></div>
+						<div id="minute-hand"></div>
+						<div id="second-hand"></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Dialogs -->
+			<div
+				id="error-dialog"
+				class="dialog"
+			>
+				<div class="dialog-title">⚠️ System Error</div>
+				<div>An error of type 11 has occurred.</div>
+				<div>Please restart your computer.</div>
+				<div class="dialog-buttons">
+					<button class="dialog-btn">Restart</button>
+					<button class="dialog-btn">Continue</button>
+				</div>
+			</div>
+
+			<!-- Easter Egg -->
+			<div id="happy-mac">
+				<div id="happy-mac-icon">😊</div>
+				<div>Welcome to Macintosh</div>
+				<div>System 7.5</div>
+			</div>
+		</div>
+
+		<script>
+			// Global variables
+			let activeWindow = null
+			let dragData = null
+			let selectedIcon = null
+			let calcValue = '0'
+			let calcOperation = null
+			let calcPrevValue = null
+
+			// DOM elements
+			const desktop = document.getElementById('desktop')
+			const windows = document.querySelectorAll('.window')
+			const icons = document.querySelectorAll('.icon')
+			const menuItems = document.querySelectorAll('.menu-item')
+			const appleMenu = document.querySelector('.apple-logo')
+			const clockDisplay = document.getElementById('clock-display')
+			const calcDisplay = document.getElementById('calc-display')
+			const calcButtons = document.querySelectorAll('.calc-btn')
+			const simpleTextArea = document.getElementById('simpletext-content')
+			const desktopPattern = document.getElementById('desktop-pattern')
+			const clockFormat = document.getElementById('clock-format')
+			const memoryBar = document.getElementById('memory-bar')
+			const happyMac = document.getElementById('happy-mac')
+
+			// Initialize the OS
+			function initOS() {
+				// Play startup sound
+				playStartupSound()
+
+				// Setup event listeners
+				setupEventListeners()
+
+				// Start clock
+				updateClock()
+				setInterval(updateClock, 1000)
+
+				// Start memory animation
+				animateMemoryBar()
+
+				// Show desktop
+				setTimeout(() => {
+					happyMac.style.display = 'none'
+				}, 2000)
+			}
+
+			// Play startup sound
+			function playStartupSound() {
+				if (document.getElementById('startup-sound').checked) {
+					// Since we can't use external files, we simulate sound with the Web Audio API
+					try {
+						const audioContext = new (window.AudioContext ||
+							window.webkitAudioContext)()
+						const oscillator = audioContext.createOscillator()
+						const gainNode = audioContext.createGain()
+
+						oscillator.connect(gainNode)
+						gainNode.connect(audioContext.destination)
+
+						oscillator.type = 'sine'
+						oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
+						oscillator.frequency.setValueAtTime(
+							523.25,
+							audioContext.currentTime + 0.1
+						)
+
+						gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+						gainNode.gain.exponentialRampToValueAtTime(
+							0.01,
+							audioContext.currentTime + 0.5
+						)
+
+						oscillator.start()
+						oscillator.stop(audioContext.currentTime + 0.5)
+					} catch (e) {
+						console.log('Audio context not supported')
+					}
+				}
+			}
+
+			// Setup all event listeners
+			function setupEventListeners() {
+				// Window controls
+				document.querySelectorAll('.window-btn').forEach((btn) => {
+					btn.addEventListener('mousedown', handleWindowControl)
+				})
+
+				// Window dragging
+				document.querySelectorAll('.window-title-bar').forEach((titleBar) => {
+					titleBar.addEventListener('mousedown', startWindowDrag)
+				})
+
+				// Desktop icons
+				icons.forEach((icon) => {
+					icon.addEventListener('mousedown', handleIconClick)
+					icon.addEventListener('dblclick', handleIconDoubleClick)
+					icon.classList.add('pointer-cursor')
+				})
+
+				// Menu items
+				menuItems.forEach((item) => {
+					item.addEventListener('click', handleMenuClick)
+				})
+
+				// Apple menu
+				appleMenu.addEventListener('click', () => {
+					document.getElementById('about-window').style.display = 'block'
+					bringToFront(document.getElementById('about-window'))
+				})
+
+				// Calculator buttons
+				calcButtons.forEach((button) => {
+					button.addEventListener('click', handleCalculatorButton)
+				})
+
+				// Control panel inputs
+				desktopPattern.addEventListener('change', updateDesktopPattern)
+				clockFormat.addEventListener('change', updateClockDisplay)
+
+				// Window focus
+				windows.forEach((window) => {
+					window.addEventListener('mousedown', () => bringToFront(window))
+				})
+
+				// Desktop click clears selection
+				desktop.addEventListener('mousedown', (e) => {
+					if (e.target === desktop) {
+						clearIconSelection()
+						clearActiveWindow()
+					}
+				})
+
+				// Text area cursor
+				simpleTextArea.addEventListener('mousedown', () => {
+					simpleTextArea.classList.add('text-cursor')
+				})
+
+				// Global mouse events for dragging
+				document.addEventListener('mousemove', handleDrag)
+				document.addEventListener('mouseup', stopDrag)
+			}
+
+			// Window dragging functionality
+			function startWindowDrag(e) {
+				if (e.target.classList.contains('window-btn')) return
+
+				const window = e.currentTarget.parentElement
+				dragData = {
+					type: 'window',
+					element: window,
+					offsetX: e.clientX - window.offsetLeft,
+					offsetY: e.clientY - window.offsetTop,
+				}
+				bringToFront(window)
+			}
+
+			// Handle window control buttons
+			function handleWindowControl(e) {
+				const btn = e.currentTarget
+				const window = btn.closest('.window')
+
+				if (btn.classList.contains('close-btn')) {
+					window.style.display = 'none'
+				} else if (btn.classList.contains('minimize-btn')) {
+					// Simple minimization - just hide for now
+					window.style.display = 'none'
+				} else if (btn.classList.contains('zoom-btn')) {
+					// Toggle window size
+					if (window.style.width === '80%') {
+						window.style.width = ''
+						window.style.height = ''
+					} else {
+						window.style.width = '80%'
+						window.style.height = '80%'
+						window.style.left = '10%'
+						window.style.top = '10%'
+					}
+				}
+			}
+
+			// Handle dragging
+			function handleDrag(e) {
+				if (!dragData) return
+
+				if (dragData.type === 'window') {
+					dragData.element.style.left = e.clientX - dragData.offsetX + 'px'
+					dragData.element.style.top = e.clientY - dragData.offsetY + 'px'
+				}
+			}
+
+			// Stop dragging
+			function stopDrag() {
+				dragData = null
+			}
+
+			// Bring window to front
+			function bringToFront(window) {
+				windows.forEach((w) => w.classList.remove('active'))
+				window.classList.add('active')
+				activeWindow = window
+			}
+
+			// Clear active window
+			function clearActiveWindow() {
+				windows.forEach((w) => w.classList.remove('active'))
+				activeWindow = null
+			}
+
+			// Handle icon click
+			function handleIconClick(e) {
+				// Prevent dragging from triggering
+				if (e.detail > 1) return
+
+				clearIconSelection()
+				this.classList.add('selected')
+				selectedIcon = this
+				bringToFront(document.getElementById('finder-window'))
+			}
+
+			// Handle icon double click
+			function handleIconDoubleClick() {
+				const app = this.getAttribute('data-app')
+				openApplication(app)
+			}
+
+			// Clear icon selection
+			function clearIconSelection() {
+				icons.forEach((icon) => icon.classList.remove('selected'))
+				selectedIcon = null
+			}
+
+			// Open application
+			function openApplication(app) {
+				let windowId
+
+				switch (app) {
+					case 'finder':
+						windowId = 'finder-window'
+						break
+					case 'calculator':
+						windowId = 'calculator-window'
+						break
+					case 'simpletext':
+						windowId = 'simpletext-window'
+						break
+					case 'controlpanel':
+						windowId = 'controlpanel-window'
+						break
+					case 'about':
+						windowId = 'about-window'
+						break
+					case 'clock':
+						windowId = 'clock-window'
+						break
+					default:
+						return
+				}
+
+				const window = document.getElementById(windowId)
+				window.style.display = 'block'
+				bringToFront(window)
+			}
+
+			// Handle menu click
+			function handleMenuClick(e) {
+				const menuText = e.currentTarget.textContent.trim()
+
+				switch (menuText) {
+					case 'File':
+						// Show error dialog as an example
+						showErrorDialog()
+						break
+					case 'Edit':
+						// Easter egg - show Happy Mac
+						happyMac.style.display = 'flex'
+						setTimeout(() => {
+							happyMac.style.display = 'none'
+						}, 3000)
+						break
+					case 'View':
+						// Open clock
+						openApplication('clock')
+						break
+					case 'Special':
+						// Empty trash
+						if (
+							selectedIcon &&
+							selectedIcon.getAttribute('data-app') === 'trash'
+						) {
+							selectedIcon.querySelector('.icon-img').textContent = '🗑️'
+							selectedIcon.querySelector('.icon-label').textContent = 'Trash'
+						}
+						break
+				}
+			}
+
+			// Show error dialog
+			function showErrorDialog() {
+				const dialog = document.getElementById('error-dialog')
+				dialog.style.display = 'block'
+				dialog.style.left =
+					window.innerWidth / 2 - dialog.offsetWidth / 2 + 'px'
+				dialog.style.top =
+					window.innerHeight / 2 - dialog.offsetHeight / 2 + 'px'
+
+				// Add button functionality
+				dialog.querySelector('.dialog-btn').addEventListener('click', () => {
+					dialog.style.display = 'none'
+					// Simulate restart by reloading
+					location.reload()
+				})
+
+				dialog
+					.querySelectorAll('.dialog-btn')[1]
+					.addEventListener('click', () => {
+						dialog.style.display = 'none'
+					})
+			}
+
+			// Update clock
+			function updateClock() {
+				const now = new Date()
+				const hours = now.getHours()
+				const minutes = now.getMinutes().toString().padStart(2, '0')
+				const seconds = now.getSeconds().toString().padStart(2, '0')
+				const ampm = hours >= 12 ? 'PM' : 'AM'
+				const displayHours = hours % 12 || 12
+
+				// Menu bar clock
+				clockDisplay.textContent = `${displayHours}:${minutes}:${seconds} ${ampm}`
+
+				// Analog clock
+				const hourHand = document.getElementById('hour-hand')
+				const minuteHand = document.getElementById('minute-hand')
+				const secondHand = document.getElementById('second-hand')
+
+				const hourDeg = (hours % 12) * 30 + minutes * 0.5
+				const minuteDeg = minutes * 6 + seconds * 0.1
+				const secondDeg = seconds * 6
+
+				hourHand.style.transform = `rotate(${hourDeg}deg)`
+				minuteHand.style.transform = `rotate(${minuteDeg}deg)`
+				secondHand.style.transform = `rotate(${secondDeg}deg)`
+
+				// Update clock window display
+				if (clockFormat.value === 'digital') {
+					document.getElementById('clock-face').innerHTML = `
+                    <div style="font-size: 24px; margin-top: 30px;">
+                        ${displayHours}:${minutes}:${seconds} ${ampm}
+                    </div>
+                `
+				} else {
+					document.getElementById('clock-face').innerHTML = `
+                    <div id="hour-hand"></div>
+                    <div id="minute-hand"></div>
+                    <div id="second-hand"></div>
+                `
+				}
+			}
+
+			// Update clock display type
+			function updateClockDisplay() {
+				updateClock()
+			}
+
+			// Update desktop pattern
+			function updateDesktopPattern() {
+				const pattern = desktopPattern.value
+				const desktop = document.getElementById('desktop')
+
+				switch (pattern) {
+					case 'default':
+						desktop.style.backgroundImage = `
+                        linear-gradient(45deg, #808080 25%, transparent 25%),
+                        linear-gradient(-45deg, #808080 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #808080 75%),
+                        linear-gradient(-45deg, transparent 75%, #808080 75%)
+                    `
+						break
+					case 'solid':
+						desktop.style.backgroundImage = 'none'
+						desktop.style.backgroundColor = '#909090'
+						break
+					case 'dense':
+						desktop.style.backgroundImage = `
+                        linear-gradient(45deg, #808080 25%, transparent 25%),
+                        linear-gradient(-45deg, #808080 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #808080 75%),
+                        linear-gradient(-45deg, transparent 75%, #808080 75%)
+                    `
+						desktop.style.backgroundSize = '8px 8px'
+						break
+				}
+			}
+
+			// Animate memory bar
+			function animateMemoryBar() {
+				let progress = 0
+				setInterval(() => {
+					progress = (progress + 0.5) % 100
+					memoryBar.style.width = `${progress}%`
+				}, 50)
+			}
+
+			// Handle calculator buttons
+			function handleCalculatorButton(e) {
+				const value = e.currentTarget.getAttribute('data-value')
+
+				if (!isNaN(value) || value === '.') {
+					// Number or decimal
+					if (calcValue === '0' || calcOperation === '=') {
+						calcValue = value
+					} else {
+						calcValue += value
+					}
+					calcOperation = null
+				} else if (value === 'C') {
+					// Clear
+					calcValue = '0'
+					calcPrevValue = null
+					calcOperation = null
+				} else if (value === 'CE') {
+					// Clear entry
+					calcValue = '0'
+				} else if (value === '=') {
+					// Perform calculation
+					if (calcOperation && calcPrevValue !== null) {
+						calcValue = calculate(
+							parseFloat(calcPrevValue),
+							parseFloat(calcValue),
+							calcOperation
+						)
+						calcPrevValue = null
+					}
+					calcOperation = '='
+				} else {
+					// Operation (+, -, ×, /)
+					if (calcOperation) {
+						if (calcPrevValue !== null) {
+							calcValue = calculate(
+								parseFloat(calcPrevValue),
+								parseFloat(calcValue),
+								calcOperation
+							)
+						}
+					}
+					calcPrevValue = calcValue
+					calcValue = '0'
+					calcOperation = value
+				}
+
+				// Update display
+				calcDisplay.textContent = calcValue
+			}
+
+			// Perform calculation
+			function calculate(a, b, operation) {
+				switch (operation) {
+					case '+':
+						return (a + b).toString()
+					case '-':
+						return (a - b).toString()
+					case '*':
+						return (a * b).toString()
+					case '/':
+						return b !== 0 ? (a / b).toString() : 'Error'
+					default:
+						return b.toString()
+				}
+			}
+
+			// Initialize OS when page loads
+			window.addEventListener('load', initOS)
+		</script>
+	</body>
+</html>

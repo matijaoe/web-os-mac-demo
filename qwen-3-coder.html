@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Mac OS System 7.5</title>
+		<style>
+			/* Base styles and system-wide elements */
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+			}
+
+			body {
+				font-family: 'Chicago', 'Arial Rounded MT Bold', Arial, sans-serif;
+				background: #c0c0c0;
+				color: #000;
+				height: 100vh;
+				overflow: hidden;
+				position: relative;
+				background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgogIDxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiNjMGMwYzAiLz4KICA8cGF0aCBkPSJNMCAwTDggOFpNOCAwTDAgOFoiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlPSIjYjBiMGIwIi8+Cjwvc3ZnPg==');
+			}
+
+			/* Menu Bar */
+			.menubar {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 20px;
+				background: #c0c0c0;
+				border-bottom: 1px solid #808080;
+				display: flex;
+				align-items: center;
+				padding: 0 5px;
+				z-index: 1000;
+				box-shadow: 0 1px 0 #fff inset;
+			}
+
+			.menu-item {
+				padding: 2px 8px;
+				cursor: pointer;
+				font-size: 12px;
+				position: relative;
+			}
+
+			.menu-item:hover {
+				background: #000;
+				color: #fff;
+			}
+
+			.menu-dropdown {
+				position: absolute;
+				top: 20px;
+				left: 0;
+				background: #c0c0c0;
+				border: 1px solid #808080;
+				border-top: none;
+				min-width: 150px;
+				box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+				display: none;
+				z-index: 1001;
+			}
+
+			.menu-item:hover .menu-dropdown {
+				display: block;
+			}
+
+			.menu-dropdown-item {
+				padding: 4px 10px;
+				font-size: 12px;
+				cursor: pointer;
+			}
+
+			.menu-dropdown-item:hover {
+				background: #000;
+				color: #fff;
+			}
+
+			.menu-divider {
+				height: 1px;
+				background: #808080;
+				margin: 4px 0;
+			}
+
+			/* Desktop */
+			.desktop {
+				position: absolute;
+				top: 20px;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				padding: 10px;
+			}
+
+			/* Icons */
+			.icon {
+				position: absolute;
+				width: 64px;
+				text-align: center;
+				cursor: pointer;
+				user-select: none;
+				padding: 5px;
+			}
+
+			.icon:hover {
+				background: rgba(0, 0, 0, 0.1);
+			}
+
+			.icon.selected {
+				background: #000;
+				color: #fff;
+			}
+
+			.icon img {
+				width: 32px;
+				height: 32px;
+				margin: 0 auto 5px;
+				display: block;
+			}
+
+			.icon-label {
+				font-size: 11px;
+				line-height: 1.2;
+				word-break: break-word;
+			}
+
+			/* Windows */
+			.window {
+				position: absolute;
+				background: #c0c0c0;
+				border: 2px outset #c0c0c0;
+				box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
+				min-width: 200px;
+				min-height: 100px;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.window-header {
+				height: 20px;
+				background: #000080;
+				color: #fff;
+				display: flex;
+				align-items: center;
+				padding: 0 5px;
+				cursor: move;
+				position: relative;
+			}
+
+			.window-title {
+				flex: 1;
+				font-size: 12px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			.window-controls {
+				display: flex;
+			}
+
+			.window-button {
+				width: 16px;
+				height: 14px;
+				margin-left: 4px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 10px;
+				cursor: pointer;
+				border: 1px outset #c0c0c0;
+			}
+
+			.window-button:hover {
+				background: #e0e0e0;
+			}
+
+			.window-close {
+				background: #c00000;
+				color: #fff;
+			}
+
+			.window-body {
+				flex: 1;
+				padding: 10px;
+				overflow: auto;
+			}
+
+			.window-resize {
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				width: 15px;
+				height: 15px;
+				cursor: nwse-resize;
+				background: repeating-linear-gradient(
+					-45deg,
+					#c0c0c0,
+					#c0c0c0 2px,
+					#808080 2px,
+					#808080 4px
+				);
+			}
+
+			.window:focus {
+				outline: 2px solid #000080;
+			}
+
+			/* Finder window */
+			.finder-sidebar {
+				width: 100px;
+				float: left;
+				padding: 10px;
+				border-right: 1px solid #808080;
+			}
+
+			.finder-content {
+				margin-left: 100px;
+				padding: 10px;
+			}
+
+			.finder-item {
+				padding: 5px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+			}
+
+			.finder-item:hover {
+				background: #000080;
+				color: #fff;
+			}
+
+			.finder-item img {
+				width: 16px;
+				height: 16px;
+				margin-right: 5px;
+			}
+
+			/* Calculator */
+			.calculator {
+				width: 200px;
+				height: 250px;
+			}
+
+			.calc-display {
+				background: #000;
+				color: #0f0;
+				font-family: 'Courier New', monospace;
+				padding: 10px;
+				text-align: right;
+				font-size: 18px;
+				margin-bottom: 10px;
+				height: 40px;
+				overflow: hidden;
+			}
+
+			.calc-buttons {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 5px;
+			}
+
+			.calc-button {
+				padding: 10px;
+				background: #c0c0c0;
+				border: 2px outset #c0c0c0;
+				text-align: center;
+				cursor: pointer;
+				font-weight: bold;
+			}
+
+			.calc-button:active {
+				border: 2px inset #c0c0c0;
+			}
+
+			.calc-button.operator {
+				background: #808080;
+			}
+
+			/* SimpleText */
+			.simpletext {
+				width: 400px;
+				height: 300px;
+			}
+
+			.simpletext-toolbar {
+				padding: 5px;
+				border-bottom: 1px solid #808080;
+				display: flex;
+			}
+
+			.simpletext-button {
+				padding: 3px 8px;
+				margin-right: 5px;
+				background: #c0c0c0;
+				border: 2px outset #c0c0c0;
+				cursor: pointer;
+			}
+
+			.simpletext-button:active {
+				border: 2px inset #c0c0c0;
+			}
+
+			.simpletext-editor {
+				flex: 1;
+				padding: 10px;
+				font-family: 'Chicago', 'Arial Rounded MT Bold', Arial, sans-serif;
+				font-size: 14px;
+				line-height: 1.4;
+				white-space: pre-wrap;
+				overflow: auto;
+				outline: none;
+			}
+
+			/* About This Mac */
+			.about-mac {
+				width: 300px;
+				height: 200px;
+			}
+
+			.about-content {
+				text-align: center;
+				padding: 20px;
+			}
+
+			.about-logo {
+				width: 64px;
+				height: 64px;
+				margin: 0 auto 15px;
+				background: #000;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #fff;
+				font-weight: bold;
+				font-size: 40px;
+			}
+
+			.about-text {
+				margin-bottom: 15px;
+				font-size: 12px;
+			}
+
+			.about-button {
+				padding: 5px 15px;
+				background: #c0c0c0;
+				border: 2px outset #c0c0c0;
+				cursor: pointer;
+			}
+
+			.about-button:active {
+				border: 2px inset #c0c0c0;
+			}
+
+			/* Control Panel */
+			.control-panel {
+				width: 350px;
+				height: 250px;
+			}
+
+			.control-options {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 10px;
+			}
+
+			.control-option {
+				padding: 10px;
+				background: #c0c0c0;
+				border: 2px outset #c0c0c0;
+				text-align: center;
+				cursor: pointer;
+			}
+
+			.control-option:active {
+				border: 2px inset #c0c0c0;
+			}
+
+			.control-option img {
+				width: 32px;
+				height: 32px;
+				margin-bottom: 5px;
+			}
+
+			/* Clock */
+			.clock-window {
+				width: 150px;
+				height: 100px;
+			}
+
+			.digital-clock {
+				font-family: 'Courier New', monospace;
+				font-size: 20px;
+				text-align: center;
+				padding: 20px;
+			}
+
+			/* Dialogs */
+			.dialog {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				background: #c0c0c0;
+				border: 2px outset #c0c0c0;
+				box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
+				z-index: 2000;
+				padding: 20px;
+				text-align: center;
+				width: 300px;
+			}
+
+			.dialog-title {
+				font-weight: bold;
+				margin-bottom: 15px;
+			}
+
+			.dialog-buttons {
+				margin-top: 20px;
+			}
+
+			.dialog-button {
+				padding: 5px 15px;
+				margin: 0 5px;
+				background: #c0c0c0;
+				border: 2px outset #c0c0c0;
+				cursor: pointer;
+			}
+
+			.dialog-button:active {
+				border: 2px inset #c0c0c0;
+			}
+
+			/* Hidden elements */
+			.hidden {
+				display: none;
+			}
+
+			/* Startup animation */
+			.startup {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: #000;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				z-index: 3000;
+				color: #fff;
+				font-family: 'Chicago', Arial, sans-serif;
+			}
+
+			.startup-logo {
+				width: 128px;
+				height: 128px;
+				background: #fff;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin-bottom: 30px;
+				color: #000;
+				font-weight: bold;
+				font-size: 80px;
+			}
+
+			.startup-text {
+				font-size: 18px;
+				letter-spacing: 2px;
+			}
+
+			/* Status bar */
+			.status-bar {
+				position: fixed;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				height: 20px;
+				background: #c0c0c0;
+				border-top: 1px solid #808080;
+				display: flex;
+				align-items: center;
+				padding: 0 10px;
+				font-size: 12px;
+				box-shadow: 0 -1px 0 #fff inset;
+			}
+
+			.status-item {
+				margin-right: 15px;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Startup Animation -->
+		<div
+			class="startup"
+			id="startup"
+		>
+			<div class="startup-logo"></div>
+			<div class="startup-text">Mac OS System 7.5</div>
+		</div>
+
+		<!-- Menu Bar -->
+		<div class="menubar">
+			<div class="menu-item">
+				
+				<div class="menu-dropdown">
+					<div
+						class="menu-dropdown-item"
+						onclick="openAboutMac()"
+					>
+						About This Mac
+					</div>
+					<div class="menu-divider"></div>
+					<div class="menu-dropdown-item">Control Panels...</div>
+					<div class="menu-dropdown-item">Finder</div>
+					<div class="menu-divider"></div>
+					<div
+						class="menu-dropdown-item"
+						onclick="shutdown()"
+					>
+						Shutdown
+					</div>
+				</div>
+			</div>
+			<div class="menu-item">
+				File
+				<div class="menu-dropdown">
+					<div class="menu-dropdown-item">New Folder</div>
+					<div class="menu-dropdown-item">Open</div>
+					<div class="menu-dropdown-item">Close Window</div>
+					<div class="menu-divider"></div>
+					<div class="menu-dropdown-item">Get Info</div>
+					<div class="menu-dropdown-item">Duplicate</div>
+					<div class="menu-divider"></div>
+					<div class="menu-dropdown-item">Print</div>
+				</div>
+			</div>
+			<div class="menu-item">
+				Edit
+				<div class="menu-dropdown">
+					<div class="menu-dropdown-item">Undo</div>
+					<div class="menu-divider"></div>
+					<div class="menu-dropdown-item">Cut</div>
+					<div class="menu-dropdown-item">Copy</div>
+					<div class="menu-dropdown-item">Paste</div>
+					<div class="menu-divider"></div>
+					<div class="menu-dropdown-item">Select All</div>
+					<div class="menu-dropdown-item">Show Clipboard</div>
+				</div>
+			</div>
+			<div class="menu-item">
+				View
+				<div class="menu-dropdown">
+					<div class="menu-dropdown-item">as Icons</div>
+					<div class="menu-dropdown-item">as List</div>
+					<div class="menu-divider"></div>
+					<div class="menu-dropdown-item">Clean Up</div>
+					<div class="menu-dropdown-item">Empty Trash</div>
+				</div>
+			</div>
+			<div class="menu-item">
+				Special
+				<div class="menu-dropdown">
+					<div class="menu-dropdown-item">Restart</div>
+					<div class="menu-dropdown-item">Eject</div>
+					<div class="menu-dropdown-item">Empty Trash</div>
+					<div class="menu-divider"></div>
+					<div class="menu-dropdown-item">Find File...</div>
+					<div class="menu-dropdown-item">Check Disk...</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Desktop -->
+		<div
+			class="desktop"
+			id="desktop"
+		>
+			<!-- Desktop Icons -->
+			<div
+				class="icon"
+				style="top: 20px; left: 20px"
+				ondblclick="openFinder()"
+			>
+				<img
+					src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzBjMGMwIi8+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4="
+					alt="Finder"
+				/>
+				<div class="icon-label">Finder</div>
+			</div>
+
+			<div
+				class="icon"
+				style="top: 20px; left: 100px"
+				ondblclick="openCalculator()"
+			>
+				<img
+					src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzBjMGMwIi8+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+Q2FsYzwvdGV4dD48L3N2Zz4="
+					alt="Calculator"
+				/>
+				<div class="icon-label">Calculator</div>
+			</div>
+
+			<div
+				class="icon"
+				style="top: 20px; left: 180px"
+				ondblclick="openSimpleText()"
+			>
+				<img
+					src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzBjMGMwIi8+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+U2ltcGxlVGV4dDwvdGV4dD48L3N2Zz4="
+					alt="SimpleText"
+				/>
+				<div class="icon-label">SimpleText</div>
+			</div>
+
+			<div
+				class="icon"
+				style="top: 20px; left: 260px"
+				ondblclick="openControlPanel()"
+			>
+				<img
+					src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzBjMGMwIi8+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+Q29udHJvbCBQYW5lbDwvdGV4dD48L3N2Zz4="
+					alt="Control Panel"
+				/>
+				<div class="icon-label">Control Panel</div>
+			</div>
+
+			<div
+				class="icon"
+				style="top: 20px; left: 340px"
+				ondblclick="openClock()"
+			>
+				<img
+					src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzBjMGMwIi8+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+Q2xvY2s8L3RleHQ+PC9zdmc+"
+					alt="Clock"
+				/>
+				<div class="icon-label">Clock</div>
+			</div>
+
+			<div
+				class="icon"
+				style="top: 100px; left: 20px"
+				ondblclick="openAboutMac()"
+			>
+				<img
+					src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjYzBjMGMwIi8+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+QWJvdXQgVGhpcyBNYWM8L3RleHQ+PC9zdmc+"
+					alt="About This Mac"
+				/>
+				<div class="icon-label">About This Mac</div>
+			</div>
+		</div>
+
+		<!-- Status Bar -->
+		<div class="status-bar">
+			<div
+				class="status-item"
+				id="clock-display"
+			>
+				12:45 PM
+			</div>
+			<div class="status-item">System 7.5</div>
+		</div>
+
+		<!-- Windows Container -->
+		<div id="windows-container"></div>
+
+		<!-- Dialogs -->
+		<div
+			class="dialog hidden"
+			id="shutdown-dialog"
+		>
+			<div class="dialog-title">Are you sure you want to shut down?</div>
+			<div class="dialog-buttons">
+				<button
+					class="dialog-button"
+					onclick="confirmShutdown()"
+				>
+					Shut Down
+				</button>
+				<button
+					class="dialog-button"
+					onclick="closeDialog('shutdown-dialog')"
+				>
+					Cancel
+				</button>
+			</div>
+		</div>
+
+		<!-- Hidden audio element for startup sound -->
+		<audio
+			id="startup-sound"
+			preload="auto"
+		>
+			<source
+				src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFfHd5eXp9gIeMkZSTkY6Mi42QlJeepaqurKinpqSjpKWnqKusrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/wABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/"
+				type="audio/wav"
+			/>
+		</audio>
+
+		<script>
+			// System variables
+			let activeWindows = []
+			let windowCounter = 0
+			let selectedIcon = null
+
+			// Initialize the system
+			document.addEventListener('DOMContentLoaded', function () {
+				// Play startup sound
+				const startupSound = document.getElementById('startup-sound')
+				startupSound.play()
+
+				// Hide startup screen after delay
+				setTimeout(() => {
+					document.getElementById('startup').classList.add('hidden')
+				}, 3000)
+
+				// Update clock
+				updateClock()
+				setInterval(updateClock, 1000)
+
+				// Make desktop icons draggable
+				makeIconsDraggable()
+			})
+
+			// Update the clock display
+			function updateClock() {
+				const now = new Date()
+				let hours = now.getHours()
+				const minutes = now.getMinutes().toString().padStart(2, '0')
+				const ampm = hours >= 12 ? 'PM' : 'AM'
+				hours = hours % 12 || 12
+				document.getElementById(
+					'clock-display'
+				).textContent = `${hours}:${minutes} ${ampm}`
+			}
+
+			// Make desktop icons draggable
+			function makeIconsDraggable() {
+				const icons = document.querySelectorAll('.icon')
+				icons.forEach((icon) => {
+					let isDragging = false
+					let offsetX, offsetY
+
+					icon.addEventListener('mousedown', function (e) {
+						// Select icon
+						if (selectedIcon) {
+							selectedIcon.classList.remove('selected')
+						}
+						selectedIcon = icon
+						icon.classList.add('selected')
+
+						// Start dragging
+						isDragging = true
+						offsetX = e.clientX - icon.getBoundingClientRect().left
+						offsetY = e.clientY - icon.getBoundingClientRect().top
+						icon.style.zIndex = 100
+					})
+
+					document.addEventListener('mousemove', function (e) {
+						if (!isDragging) return
+
+						const x = e.clientX - offsetX
+						const y = e.clientY - offsetY
+
+						// Constrain to desktop area
+						const desktopRect = document
+							.querySelector('.desktop')
+							.getBoundingClientRect()
+						const iconRect = icon.getBoundingClientRect()
+
+						const constrainedX = Math.max(
+							desktopRect.left,
+							Math.min(x, desktopRect.right - iconRect.width)
+						)
+						const constrainedY = Math.max(
+							desktopRect.top + 20,
+							Math.min(y, desktopRect.bottom - iconRect.height)
+						)
+
+						icon.style.left = `${constrainedX - desktopRect.left}px`
+						icon.style.top = `${constrainedY - desktopRect.top}px`
+					})
+
+					document.addEventListener('mouseup', function () {
+						isDragging = false
+						icon.style.zIndex = 'auto'
+					})
+				})
+			}
+
+			// Create a new window
+			function createWindow(title, content, width = 300, height = 200) {
+				windowCounter++
+				const windowId = `window-${windowCounter}`
+
+				const windowElement = document.createElement('div')
+				windowElement.className = 'window'
+				windowElement.id = windowId
+				windowElement.style.width = `${width}px`
+				windowElement.style.height = `${height}px`
+				windowElement.style.left = `${Math.random() * 200 + 100}px`
+				windowElement.style.top = `${Math.random() * 100 + 100}px`
+				windowElement.tabIndex = 0
+
+				windowElement.innerHTML = `
+                <div class="window-header">
+                    <div class="window-title">${title}</div>
+                    <div class="window-controls">
+                        <div class="window-button window-close" onclick="closeWindow('${windowId}')">×</div>
+                        <div class="window-button">−</div>
+                        <div class="window-button">□</div>
+                    </div>
+                </div>
+                <div class="window-body">${content}</div>
+                <div class="window-resize"></div>
+            `
+
+				document.getElementById('windows-container').appendChild(windowElement)
+
+				// Make window draggable
+				makeWindowDraggable(windowElement)
+
+				// Make window resizable
+				makeWindowResizable(windowElement)
+
+				// Focus window
+				windowElement.focus()
+
+				// Add to active windows
+				activeWindows.push(windowElement)
+
+				return windowElement
+			}
+
+			// Make window draggable
+			function makeWindowDraggable(windowElement) {
+				const header = windowElement.querySelector('.window-header')
+				let isDragging = false
+				let offsetX, offsetY
+
+				header.addEventListener('mousedown', function (e) {
+					if (e.target.classList.contains('window-button')) return
+
+					isDragging = true
+					offsetX = e.clientX - windowElement.getBoundingClientRect().left
+					offsetY = e.clientY - windowElement.getBoundingClientRect().top
+
+					// Bring to front
+					windowElement.style.zIndex = 1000 + activeWindows.length
+				})
+
+				document.addEventListener('mousemove', function (e) {
+					if (!isDragging) return
+
+					const x = e.clientX - offsetX
+					const y = e.clientY - offsetY
+
+					// Constrain to viewport
+					const maxX = window.innerWidth - windowElement.offsetWidth
+					const maxY = window.innerHeight - windowElement.offsetHeight
+
+					windowElement.style.left = `${Math.max(0, Math.min(x, maxX))}px`
+					windowElement.style.top = `${Math.max(20, Math.min(y, maxY))}px`
+				})
+
+				document.addEventListener('mouseup', function () {
+					isDragging = false
+				})
+			}
+
+			// Make window resizable
+			function makeWindowResizable(windowElement) {
+				const resizeHandle = windowElement.querySelector('.window-resize')
+				let isResizing = false
+				let startX, startY, startWidth, startHeight
+
+				resizeHandle.addEventListener('mousedown', function (e) {
+					isResizing = true
+					startX = e.clientX
+					startY = e.clientY
+					startWidth = parseInt(
+						document.defaultView.getComputedStyle(windowElement).width,
+						10
+					)
+					startHeight = parseInt(
+						document.defaultView.getComputedStyle(windowElement).height,
+						10
+					)
+					e.preventDefault()
+				})
+
+				document.addEventListener('mousemove', function (e) {
+					if (!isResizing) return
+
+					const width = startWidth + (e.clientX - startX)
+					const height = startHeight + (e.clientY - startY)
+
+					windowElement.style.width = `${Math.max(200, width)}px`
+					windowElement.style.height = `${Math.max(100, height)}px`
+				})
+
+				document.addEventListener('mouseup', function () {
+					isResizing = false
+				})
+			}
+
+			// Close a window
+			function closeWindow(windowId) {
+				const windowElement = document.getElementById(windowId)
+				if (windowElement) {
+					windowElement.remove()
+					activeWindows = activeWindows.filter((win) => win.id !== windowId)
+				}
+			}
+
+			// Open Finder
+			function openFinder() {
+				const content = `
+                <div class="finder-sidebar">
+                    <div class="finder-item">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZD0iTTEgMmgxNHYxMkgxVjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSIjZTBlMGUwIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSJub25lIiBzdHJva2U9IiM4MDgwODAiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==" alt="Hard Disk">
+                        <span>Hard Disk</span>
+                    </div>
+                    <div class="finder-item">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZD0iTTEgMmgxNHYxMkgxVjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSIjZTBlMGUwIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSJub25lIiBzdHJva2U9IiM4MDgwODAiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==" alt="System Folder">
+                        <span>System Folder</span>
+                    </div>
+                    <div class="finder-item">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZD0iTTEgMmgxNHYxMkgxVjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSIjZTBlMGUwIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSJub25lIiBzdHJva2U9IiM4MDgwODAiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==" alt="Applications">
+                        <span>Applications</span>
+                    </div>
+                </div>
+                <div class="finder-content">
+                    <div class="finder-item">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZD0iTTEgMmgxNHYxMkgxVjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSIjZTBlMGUwIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSJub25lIiBzdHJva2U9IiM4MDgwODAiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==" alt="Document">
+                        <span>Untitled Document</span>
+                    </div>
+                    <div class="finder-item">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZD0iTTEgMmgxNHYxMkgxVjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSIjZTBlMGUwIi8+PHBhdGggZD0iTTEgMnYxNGgxNHYtMTR6IiBmaWxsPSJub25lIiBzdHJva2U9IiM4MDgwODAiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==" alt="Folder">
+                        <span>My Folder</span>
+                    </div>
+                </div>
+            `
+				createWindow('Finder', content, 400, 300)
+			}
+
+			// Open Calculator
+			function openCalculator() {
+				let displayValue = '0'
+				let firstOperand = null
+				let operator = null
+				let waitingForSecondOperand = false
+
+				const content = `
+                <div class="calc-display" id="calc-display">0</div>
+                <div class="calc-buttons">
+                    <div class="calc-button" onclick="calcInput('7')">7</div>
+                    <div class="calc-button" onclick="calcInput('8')">8</div>
+                    <div class="calc-button" onclick="calcInput('9')">9</div>
+                    <div class="calc-button operator" onclick="calcOperator('/')">÷</div>
+                    
+                    <div class="calc-button" onclick="calcInput('4')">4</div>
+                    <div class="calc-button" onclick="calcInput('5')">5</div>
+                    <div class="calc-button" onclick="calcInput('6')">6</div>
+                    <div class="calc-button operator" onclick="calcOperator('*')">×</div>
+                    
+                    <div class="calc-button" onclick="calcInput('1')">1</div>
+                    <div class="calc-button" onclick="calcInput('2')">2</div>
+                    <div class="calc-button" onclick="calcInput('3')">3</div>
+                    <div class="calc-button operator" onclick="calcOperator('-')">−</div>
+                    
+                    <div class="calc-button" onclick="calcInput('0')">0</div>
+                    <div class="calc-button" onclick="calcDecimal()">.</div>
+                    <div class="calc-button operator" onclick="calcEquals()">=</div>
+                    <div class="calc-button operator" onclick="calcOperator('+')">+</div>
+                    
+                    <div class="calc-button" onclick="calcClear()">C</div>
+                    <div class="calc-button" onclick="calcClearEntry()">CE</div>
+                    <div class="calc-button" onclick="calcBackspace()">⌫</div>
+                    <div class="calc-button operator" onclick="calcOperator('%')">%</div>
+                </div>
+            `
+
+				const windowElement = createWindow('Calculator', content, 200, 250)
+				const display = windowElement.querySelector('#calc-display')
+
+				// Calculator functions
+				window.calcInput = function (digit) {
+					if (waitingForSecondOperand) {
+						displayValue = digit
+						waitingForSecondOperand = false
+					} else {
+						displayValue = displayValue === '0' ? digit : displayValue + digit
+					}
+					display.textContent = displayValue
+				}
+
+				window.calcDecimal = function () {
+					if (waitingForSecondOperand) {
+						displayValue = '0.'
+						waitingForSecondOperand = false
+					} else if (displayValue.indexOf('.') === -1) {
+						displayValue += '.'
+					}
+					display.textContent = displayValue
+				}
+
+				window.calcOperator = function (nextOperator) {
+					const inputValue = parseFloat(displayValue)
+
+					if (firstOperand === null) {
+						firstOperand = inputValue
+					} else if (operator) {
+						const result = performCalculation[operator](
+							firstOperand,
+							inputValue
+						)
+						displayValue = String(result)
+						display.textContent = displayValue
+						firstOperand = result
+					}
+
+					waitingForSecondOperand = true
+					operator = nextOperator
+				}
+
+				window.calcEquals = function () {
+					const inputValue = parseFloat(displayValue)
+
+					if (
+						firstOperand === null ||
+						operator === null ||
+						waitingForSecondOperand
+					) {
+						return
+					}
+
+					const result = performCalculation[operator](firstOperand, inputValue)
+					displayValue = String(result)
+					display.textContent = displayValue
+					firstOperand = result
+					operator = null
+					waitingForSecondOperand = true
+				}
+
+				window.calcClear = function () {
+					displayValue = '0'
+					firstOperand = null
+					operator = null
+					waitingForSecondOperand = false
+					display.textContent = displayValue
+				}
+
+				window.calcClearEntry = function () {
+					displayValue = '0'
+					display.textContent = displayValue
+				}
+
+				window.calcBackspace = function () {
+					if (displayValue.length > 1) {
+						displayValue = displayValue.slice(0, -1)
+					} else {
+						displayValue = '0'
+					}
+					display.textContent = displayValue
+				}
+
+				const performCalculation = {
+					'/': (first, second) => first / second,
+					'*': (first, second) => first * second,
+					'+': (first, second) => first + second,
+					'-': (first, second) => first - second,
+					'%': (first, second) => first % second,
+				}
+			}
+
+			// Open SimpleText
+			function openSimpleText() {
+				const content = `
+                <div class="simpletext-toolbar">
+                    <div class="simpletext-button">New</div>
+                    <div class="simpletext-button">Open</div>
+                    <div class="simpletext-button">Save</div>
+                    <div class="simpletext-button">Print</div>
+                </div>
+                <div class="simpletext-editor" contenteditable="true" id="simpletext-editor"></div>
+            `
+
+				const windowElement = createWindow('SimpleText', content, 400, 300)
+				const editor = windowElement.querySelector('#simpletext-editor')
+
+				// Focus editor when window is focused
+				windowElement.addEventListener('focus', function () {
+					editor.focus()
+				})
+			}
+
+			// Open Control Panel
+			function openControlPanel() {
+				const content = `
+                <div class="control-options">
+                    <div class="control-option" onclick="showAlert('Mouse settings opened')">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+TW91c2U8L3RleHQ+PC9zdmc+" alt="Mouse">
+                        <div>Mouse</div>
+                    </div>
+                    <div class="control-option" onclick="showAlert('Keyboard settings opened')">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+S2V5Ym9hcmQ8L3RleHQ+PC9zdmc+" alt="Keyboard">
+                        <div>Keyboard</div>
+                    </div>
+                    <div class="control-option" onclick="showAlert('Monitor settings opened')">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+TW9uaXRvcjwvdGV4dD48L3N2Zz4=" alt="Monitor">
+                        <div>Monitor</div>
+                    </div>
+                    <div class="control-option" onclick="showAlert('Sound settings opened')">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZD0iTTggOGgyMXYxNkg4eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0iI2UwZTBlMCIvPjxwYXRoIGQ9Ik04IDh2MTZoMjF2LTE2eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODA4MDgwIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIxNiIgeT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+U291bmQ8L3RleHQ+PC9zdmc+" alt="Sound">
+                        <div>Sound</div>
+                    </div>
+                </div>
+            `
+				createWindow('Control Panel', content, 350, 250)
+			}
+
+			// Open Clock
+			function openClock() {
+				const content = `<div class="digital-clock" id="digital-clock">12:45:30 PM</div>`
+				const windowElement = createWindow('Clock', content, 150, 100)
+
+				// Update clock in window
+				function updateWindowClock() {
+					const now = new Date()
+					let hours = now.getHours()
+					const minutes = now.getMinutes().toString().padStart(2, '0')
+					const seconds = now.getSeconds().toString().padStart(2, '0')
+					const ampm = hours >= 12 ? 'PM' : 'AM'
+					hours = hours % 12 || 12
+					windowElement.querySelector(
+						'#digital-clock'
+					).textContent = `${hours}:${minutes}:${seconds} ${ampm}`
+				}
+
+				updateWindowClock()
+				setInterval(updateWindowClock, 1000)
+			}
+
+			// Open About This Mac
+			function openAboutMac() {
+				const content = `
+                <div class="about-content">
+                    <div class="about-logo"></div>
+                    <div class="about-text">Mac OS System 7.5<br>Version 7.5<br>© 1984-1996 Apple Computer, Inc.</div>
+                    <button class="about-button" onclick="closeWindow(this.closest('.window').id)">OK</button>
+                </div>
+            `
+				createWindow('About This Mac', content, 300, 200)
+			}
+
+			// Show alert dialog
+			function showAlert(message) {
+				const content = `
+                <div class="dialog-title">${message}</div>
+                <div class="dialog-buttons">
+                    <button class="dialog-button" onclick="closeDialog('alert-dialog')">OK</button>
+                </div>
+            `
+
+				const dialog = document.createElement('div')
+				dialog.className = 'dialog'
+				dialog.id = 'alert-dialog'
+				dialog.innerHTML = content
+
+				document.body.appendChild(dialog)
+			}
+
+			// Close dialog
+			function closeDialog(dialogId) {
+				const dialog = document.getElementById(dialogId)
+				if (dialog) {
+					dialog.remove()
+				}
+			}
+
+			// Shutdown system
+			function shutdown() {
+				document.getElementById('shutdown-dialog').classList.remove('hidden')
+			}
+
+			// Confirm shutdown
+			function confirmShutdown() {
+				// In a real implementation, this would shut down the system
+				// For this demo, we'll just reload the page
+				location.reload()
+			}
+
+			// Easter egg: Konami code
+			let konamiCode = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]
+			let konamiIndex = 0
+
+			document.addEventListener('keydown', function (e) {
+				if (e.keyCode === konamiCode[konamiIndex]) {
+					konamiIndex++
+					if (konamiIndex === konamiCode.length) {
+						showAlert(
+							'You found the easter egg! System 7.5 activated secret mode.'
+						)
+						konamiIndex = 0
+					}
+				} else {
+					konamiIndex = 0
+				}
+			})
+		</script>
+	</body>
+</html>

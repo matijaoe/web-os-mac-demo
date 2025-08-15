@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Mac OS System 7.5 Simulator</title>
+		<style>
+			/* Global Styles */
+			body {
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				background-color: #c0c0c0;
+				font-family: 'Chicago', 'Helvetica', sans-serif; /* Fallback to sans-serif for web compatibility */
+				user-select: none;
+				cursor: default;
+			}
+
+			/* Classic Mac desktop pattern simulation */
+			#desktop {
+				position: absolute;
+				top: 20px; /* Space for menu bar */
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: repeating-linear-gradient(
+					45deg,
+					#c0c0c0,
+					#c0c0c0 2px,
+					#e0e0e0 2px,
+					#e0e0e0 4px
+				);
+				overflow: hidden;
+			}
+
+			/* Menu Bar */
+			#menu-bar {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 20px;
+				background-color: #e0e0e0;
+				border-bottom: 1px solid #000;
+				display: flex;
+				align-items: center;
+				padding: 0 5px;
+				font-size: 12px;
+			}
+
+			.menu-item {
+				margin-right: 15px;
+				position: relative;
+			}
+
+			.menu-dropdown {
+				display: none;
+				position: absolute;
+				top: 20px;
+				left: 0;
+				background-color: #e0e0e0;
+				border: 1px solid #000;
+				box-shadow: 2px 2px 0 #808080;
+				padding: 5px 0;
+				min-width: 150px;
+			}
+
+			.menu-dropdown div {
+				padding: 5px 10px;
+			}
+
+			.menu-dropdown div:hover {
+				background-color: #000;
+				color: #fff;
+			}
+
+			/* Windows */
+			.window {
+				position: absolute;
+				background-color: #e0e0e0;
+				border: 1px solid #000;
+				box-shadow: 2px 2px 0 #808080;
+				min-width: 200px;
+				min-height: 100px;
+				resize: both;
+				overflow: auto;
+			}
+
+			.window-titlebar {
+				height: 20px;
+				background-color: #c0c0c0;
+				border-bottom: 1px solid #000;
+				display: flex;
+				align-items: center;
+				padding: 0 5px;
+				cursor: move;
+			}
+
+			.window-close {
+				width: 12px;
+				height: 12px;
+				background-color: #fff;
+				border: 1px solid #000;
+				margin-right: 5px;
+				cursor: pointer;
+			}
+
+			.window-content {
+				padding: 10px;
+				font-size: 12px;
+			}
+
+			/* Icons */
+			.icon {
+				position: absolute;
+				width: 80px;
+				text-align: center;
+				cursor: pointer;
+			}
+
+			.icon img {
+				width: 32px;
+				height: 32px;
+				background: #fff; /* Placeholder for icon */
+				border: 1px solid #000;
+			}
+
+			.icon.selected {
+				background-color: #000;
+				color: #fff;
+			}
+
+			/* Inset/Outset Borders */
+			.inset {
+				border: 1px inset #808080;
+			}
+
+			.outset {
+				border: 1px outset #808080;
+			}
+
+			/* Cursor Changes */
+			.resize-cursor {
+				cursor: nwse-resize;
+			}
+
+			/* Dialogs */
+			.dialog {
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				background-color: #e0e0e0;
+				border: 1px solid #000;
+				box-shadow: 2px 2px 0 #808080;
+				padding: 20px;
+				text-align: center;
+			}
+
+			/* Specific App Styles */
+			#calculator .buttons {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 5px;
+			}
+
+			#calculator button {
+				padding: 10px;
+				background-color: #c0c0c0;
+				border: 1px outset #808080;
+				cursor: pointer;
+			}
+
+			#calculator button:active {
+				border: 1px inset #808080;
+			}
+
+			#simpletext textarea {
+				width: 100%;
+				height: 200px;
+				border: 1px inset #808080;
+				font-family: inherit;
+				font-size: 12px;
+			}
+
+			#clock {
+				font-size: 24px;
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="menu-bar">
+			<div
+				class="menu-item"
+				id="apple-menu"
+			>
+				
+			</div>
+			<div class="menu-item">File</div>
+			<div class="menu-item">Edit</div>
+			<div class="menu-item">View</div>
+			<div class="menu-item">Special</div>
+			<div style="flex: 1"></div>
+			<div id="menu-clock">00:00</div>
+		</div>
+		<div id="desktop">
+			<!-- Desktop Icons -->
+			<div
+				class="icon"
+				style="left: 20px; top: 20px"
+				data-app="finder"
+			>
+				Finder
+			</div>
+			<div
+				class="icon"
+				style="left: 20px; top: 100px"
+				data-app="calculator"
+			>
+				Calculator
+			</div>
+			<div
+				class="icon"
+				style="left: 20px; top: 180px"
+				data-app="simpletext"
+			>
+				SimpleText
+			</div>
+			<div
+				class="icon"
+				style="left: 20px; top: 260px"
+				data-app="about"
+			>
+				About
+			</div>
+			<div
+				class="icon"
+				style="left: 20px; top: 340px"
+				data-app="controlpanel"
+			>
+				Control Panel
+			</div>
+			<div
+				class="icon"
+				style="left: 20px; top: 420px"
+				data-app="clock"
+			>
+				Clock
+			</div>
+		</div>
+
+		<!-- Menu Dropdowns -->
+		<div
+			class="menu-dropdown"
+			id="apple-dropdown"
+		>
+			<div data-action="about">About This Macintosh...</div>
+			<!-- More items -->
+		</div>
+		<div
+			class="menu-dropdown"
+			id="file-dropdown"
+		>
+			<div>New Folder</div>
+			<div>Open</div>
+			<div>Close</div>
+		</div>
+		<!-- Other dropdowns similar -->
+
+		<script>
+			// Startup Sound Simulation (simple alert for now)
+			window.addEventListener('load', () => {
+				// Simulate chime
+				console.log('Boing!') // Placeholder for sound
+			})
+
+			// Window Management
+			let windows = []
+			let zIndex = 100
+			let activeWindow = null
+
+			function createWindow(
+				title,
+				content,
+				x = 100,
+				y = 100,
+				w = 300,
+				h = 200
+			) {
+				const win = document.createElement('div')
+				win.className = 'window'
+				win.style.left = `${x}px`
+				win.style.top = `${y}px`
+				win.style.width = `${w}px`
+				win.style.height = `${h}px`
+				win.style.zIndex = zIndex++
+				win.innerHTML = `
+                <div class="window-titlebar">
+                    <div class="window-close"></div>
+                    ${title}
+                </div>
+                <div class="window-content">${content}</div>
+            `
+				document.getElementById('desktop').appendChild(win)
+				windows.push(win)
+
+				// Drag
+				const titlebar = win.querySelector('.window-titlebar')
+				let isDragging = false
+				let offsetX, offsetY
+				titlebar.onmousedown = (e) => {
+					isDragging = true
+					offsetX = e.clientX - win.offsetLeft
+					offsetY = e.clientY - win.offsetTop
+					activateWindow(win)
+				}
+				document.onmousemove = (e) => {
+					if (isDragging) {
+						win.style.left = `${e.clientX - offsetX}px`
+						win.style.top = `${e.clientY - offsetY}px`
+					}
+				}
+				document.onmouseup = () => {
+					isDragging = false
+				}
+
+				// Close
+				win.querySelector('.window-close').onclick = () => {
+					win.remove()
+					windows = windows.filter((w) => w !== win)
+				}
+
+				// Resize (native resize works with CSS)
+
+				// Focus
+				win.onclick = () => activateWindow(win)
+
+				return win
+			}
+
+			function activateWindow(win) {
+				if (activeWindow) activeWindow.style.zIndex = 99
+				win.style.zIndex = zIndex++
+				activeWindow = win
+			}
+
+			// Menu Bar
+			const menus = document.querySelectorAll('.menu-item')
+			menus.forEach((menu) => {
+				menu.onmousedown = (e) => {
+					// Show dropdown (simplified)
+					console.log('Menu opened')
+				}
+			})
+
+			// Desktop Icons
+			const icons = document.querySelectorAll('.icon')
+			let selectedIcon = null
+			icons.forEach((icon) => {
+				icon.ondblclick = () => launchApp(icon.dataset.app)
+				icon.onclick = () => {
+					if (selectedIcon) selectedIcon.classList.remove('selected')
+					icon.classList.add('selected')
+					selectedIcon = icon
+				}
+
+				// Drag icon
+				let isDraggingIcon = false
+				let offsetX, offsetY
+				icon.onmousedown = (e) => {
+					isDraggingIcon = true
+					offsetX = e.clientX - icon.offsetLeft
+					offsetY = e.clientY - icon.offsetTop
+				}
+				document.onmousemove = (e) => {
+					if (isDraggingIcon) {
+						icon.style.left = `${e.clientX - offsetX}px`
+						icon.style.top = `${e.clientY - offsetY}px`
+					}
+				}
+				document.onmouseup = () => {
+					isDraggingIcon = false
+				}
+			})
+
+			// Launch Apps
+			function launchApp(app) {
+				let content = ''
+				switch (app) {
+					case 'finder':
+						content =
+							'<div>Finder - Simulated files</div><ul><li>File1</li><li>Folder1</li></ul>'
+						createWindow('Finder', content)
+						break
+					case 'calculator':
+						content = `
+                        <input type="text" id="calc-display" class="inset" readonly>
+                        <div class="buttons">
+                            <button onclick="calc('7')">7</button>
+                            <button onclick="calc('8')">8</button>
+                            <button onclick="calc('9')">9</button>
+                            <button onclick="calc('/')">/</button>
+                            <button onclick="calc('4')">4</button>
+                            <button onclick="calc('5')">5</button>
+                            <button onclick="calc('6')">6</button>
+                            <button onclick="calc('*')">*</button>
+                            <button onclick="calc('1')">1</button>
+                            <button onclick="calc('2')">2</button>
+                            <button onclick="calc('3')">3</button>
+                            <button onclick="calc('-')">-</button>
+                            <button onclick="calc('0')">0</button>
+                            <button onclick="calc('.')">.</button>
+                            <button onclick="calc('=')">=</button>
+                            <button onclick="calc('+')">+</button>
+                            <button onclick="calc('C')">C</button>
+                        </div>
+                    `
+						const win = createWindow('Calculator', content)
+						win.querySelector('#calc-display').value = '0'
+						window.calc = function (val) {
+							const display = win.querySelector('#calc-display')
+							if (val === '=') {
+								try {
+									display.value = eval(display.value)
+								} catch {
+									display.value = 'Error'
+								}
+							} else if (val === 'C') {
+								display.value = '0'
+							} else {
+								display.value =
+									(display.value === '0' ? '' : display.value) + val
+							}
+						}
+						break
+					case 'simpletext':
+						content = '<textarea>SimpleText Editor</textarea>'
+						createWindow('SimpleText', content)
+						break
+					case 'about':
+						content =
+							'Mac OS System 7.5 Simulator<br>Created in 2025<br>Memory: Simulated'
+						createWindow('About This Macintosh', content)
+						break
+					case 'controlpanel':
+						content =
+							'<div>Control Panel<br><button>Toggle Theme</button></div>'
+						createWindow('Control Panel', content)
+						break
+					case 'clock':
+						content = '<div id="clock"></div>'
+						const clockWin = createWindow('Clock', content)
+						setInterval(() => {
+							const now = new Date()
+							clockWin.querySelector('#clock').innerText =
+								now.toLocaleTimeString()
+						}, 1000)
+						break
+				}
+			}
+
+			// Keyboard Shortcuts (example)
+			document.addEventListener('keydown', (e) => {
+				if (e.metaKey && e.key === 'q') {
+					if (activeWindow) activeWindow.querySelector('.window-close').click()
+				}
+			})
+
+			// Context Menu (simplified)
+			document.addEventListener('contextmenu', (e) => {
+				e.preventDefault()
+				console.log('Context menu')
+			})
+
+			// Menu Clock
+			setInterval(() => {
+				const now = new Date()
+				document.getElementById('menu-clock').innerText =
+					now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+			}, 1000)
+
+			// Easter Egg: Konami Code for something fun
+			let konami = [
+				'ArrowUp',
+				'ArrowUp',
+				'ArrowDown',
+				'ArrowDown',
+				'ArrowLeft',
+				'ArrowRight',
+				'ArrowLeft',
+				'ArrowRight',
+				'b',
+				'a',
+			]
+			let konamiIndex = 0
+			document.addEventListener('keydown', (e) => {
+				if (e.key === konami[konamiIndex]) {
+					konamiIndex++
+					if (konamiIndex === konami.length) {
+						alert('Konami Code Activated! 🎉')
+						konamiIndex = 0
+					}
+				} else {
+					konamiIndex = 0
+				}
+			})
+
+			// Error Dialog Example
+			function showError(msg) {
+				const dialog = document.createElement('div')
+				dialog.className = 'dialog'
+				dialog.innerHTML = `${msg}<br><button onclick="this.parentNode.remove()">OK</button>`
+				document.body.appendChild(dialog)
+			}
+
+			// Example usage: showError('An error occurred!');
+		</script>
+	</body>
+</html>

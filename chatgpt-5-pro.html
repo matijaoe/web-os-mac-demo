@@ -1,0 +1,2664 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1"
+		/>
+		<title>System 7.5 — Web Edition (Single File)</title>
+		<style>
+			/* =============================================================
+   System 7.5 — Web Edition (single-file)
+   - No external dependencies
+   - Inline CSS + JS
+   - Designed for modern browsers
+   ============================================================= */
+
+			/* ---------- Core palette (classic grayscale) ---------- */
+			:root {
+				--bg: #c0c0c0;
+				--hi: #e0e0e0;
+				--face: #d0d0d0;
+				--ink: #000000;
+				--shade: #808080;
+				--lo: #9a9a9a;
+				--white: #ffffff;
+				--focus: #4b7bd4;
+				--selectBG: #1e1e1e;
+				--selectFG: #ffffff;
+				--menuBG: #d8d8d8;
+				--menuBorder: #7a7a7a;
+				--alertBG: #d9d9d9;
+				--desk-pattern-dot: #b6b6b6;
+				--title-inactive: #bdbdbd;
+				--title-active: #dedede;
+				--title-text: #000;
+				--accent: #080808;
+				--border-dark: #6a6a6a;
+				--border-light: #f2f2f2;
+				--glow: #f9f9f9;
+				--window: #cfcfcf;
+				--button: #cacaca;
+				--button-press: #aaaaaa;
+				--trayBG: #bbbbbb;
+				--danger: #7a0000;
+			}
+
+			/* Attempt to mimic Chicago. If unavailable, fallbacks approximate. */
+			@font-face {
+				font-family: 'ChicagoLike';
+				src: local('Chicago'), local('Charcoal'), local('Geneva'),
+					local('Lucida Grande');
+				font-weight: 400;
+				font-style: normal;
+				font-display: swap;
+			}
+			html,
+			body {
+				height: 100%;
+			}
+			body {
+				margin: 0;
+				color: var(--ink);
+				font-family: ChicagoLike, -apple-system, BlinkMacSystemFont,
+					'Lucida Grande', 'Segoe UI', Tahoma, Arial, sans-serif;
+				font-size: 14px;
+				line-height: 1.2;
+				/* Classic dithered background */
+				background-color: var(--bg);
+				background-image: radial-gradient(
+						var(--desk-pattern-dot) 12%,
+						transparent 13%
+					),
+					radial-gradient(var(--desk-pattern-dot) 12%, transparent 13%);
+				background-size: 4px 4px;
+				background-position: 0 0, 2px 2px;
+				user-select: none;
+				overflow: hidden;
+			}
+
+			/* Inset/outset 3D frame helpers */
+			.inset {
+				box-shadow: inset -1px -1px 0 var(--border-dark),
+					inset 1px 1px 0 var(--border-light);
+			}
+			.outset {
+				box-shadow: inset -1px -1px 0 var(--border-light),
+					inset 1px 1px 0 var(--border-dark);
+			}
+
+			/* ---------- Menubar ---------- */
+			#menubar {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 24px;
+				background: var(--menuBG);
+				border-bottom: 1px solid var(--menuBorder);
+				display: flex;
+				align-items: center;
+				z-index: 10000;
+				padding: 0 6px;
+				box-shadow: inset 0 1px 0 var(--white),
+					inset 0 -1px 0 var(--border-dark);
+			}
+			#apple {
+				font-weight: bold;
+				margin-right: 10px;
+				padding: 2px 6px;
+				cursor: default;
+			}
+			.menu {
+				position: relative;
+				padding: 2px 8px;
+				border-radius: 0;
+				cursor: default;
+				margin-right: 4px;
+			}
+			.menu:focus,
+			.menu:hover {
+				background: var(--hi);
+				outline: none;
+			}
+			.menu-title {
+				pointer-events: none;
+			}
+			.menu-popup {
+				display: none;
+				position: absolute;
+				top: 18px;
+				left: 0;
+				min-width: 180px;
+				background: var(--menuBG);
+				border: 1px solid var(--menuBorder);
+				box-shadow: 2px 2px 0 var(--border-dark), 1px 1px 0 var(--white) inset;
+				z-index: 10001;
+			}
+			.menu.open .menu-popup {
+				display: block;
+			}
+			.menu-item {
+				padding: 4px 10px;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				white-space: nowrap;
+			}
+			.menu-item.disabled {
+				color: #666;
+				pointer-events: none;
+			}
+			.menu-item:hover {
+				background: var(--hi);
+			}
+			.menu-sep {
+				height: 1px;
+				background: var(--menuBorder);
+				margin: 4px 6px;
+			}
+
+			.kbd {
+				opacity: 0.7;
+				font-size: 12px;
+				margin-left: 12px;
+			}
+			.badge {
+				font-size: 11px;
+				padding: 1px 4px;
+				border: 1px solid var(--ink);
+			}
+
+			/* ---------- Desktop ---------- */
+			#desktop {
+				position: absolute;
+				top: 24px;
+				left: 0;
+				right: 0;
+				bottom: 22px;
+				overflow: hidden;
+			}
+			#shelf {
+				position: absolute;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				height: 22px;
+				background: var(--trayBG);
+				border-top: 1px solid var(--border-dark);
+				box-shadow: inset 0 1px 0 var(--white);
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				padding: 0 6px;
+			}
+			.shelf-item {
+				padding: 2px 6px;
+				background: var(--button);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white), 1px 1px 0 var(--border-light);
+				cursor: default;
+			}
+
+			/* ---------- Icons ---------- */
+			.icon {
+				position: absolute;
+				width: 80px;
+				text-align: center;
+				cursor: default;
+			}
+			.icon .img {
+				width: 36px;
+				height: 36px;
+				margin: 4px auto 4px;
+			}
+			.icon .label {
+				display: inline-block;
+				padding: 1px 3px;
+				background: transparent;
+				border: 1px solid transparent;
+				max-width: 100%;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.icon.selected .label {
+				background: var(--selectBG);
+				color: var(--selectFG);
+				border-color: var(--ink);
+			}
+			.icon .rename {
+				width: 100%;
+				padding: 1px 2px;
+				border: 1px solid var(--ink);
+				background: var(--white);
+				font: inherit;
+				color: inherit;
+			}
+
+			/* ---------- Window ---------- */
+			.window {
+				position: absolute;
+				background: var(--window);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white), 2px 2px 0 var(--border-dark);
+				min-width: 240px;
+				min-height: 140px;
+			}
+			.titlebar {
+				height: 18px;
+				background: linear-gradient(#efefef, #cfcfcf);
+				display: flex;
+				align-items: center;
+				border-bottom: 1px solid var(--border-dark);
+				user-select: none;
+				cursor: move;
+			}
+			.window.inactive .titlebar {
+				background: linear-gradient(#d9d9d9, #bdbdbd);
+				color: #444;
+			}
+			.titlebar .buttons {
+				display: flex;
+				gap: 4px;
+				padding: 0 6px;
+				align-items: center;
+			}
+			.btn {
+				width: 11px;
+				height: 11px;
+				background: var(--button);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white), 1px 1px 0 var(--border-light);
+			}
+			.btn:active {
+				background: var(--button-press);
+			}
+			.btn.close::before {
+				content: '✕';
+				font-size: 9px;
+				display: block;
+				text-align: center;
+				line-height: 11px;
+			}
+			.btn.min::before {
+				content: '–';
+				font-size: 12px;
+				display: block;
+				text-align: center;
+				line-height: 9px;
+				transform: translateY(-1px);
+			}
+			.btn.zoom::before {
+				content: '▣';
+				font-size: 8px;
+				display: block;
+				text-align: center;
+				line-height: 11px;
+			}
+
+			.title {
+				flex: 1;
+				text-align: center;
+				font-weight: bold;
+				letter-spacing: 0.2px;
+				text-shadow: 0 1px var(--white);
+			}
+			.window .content {
+				position: absolute;
+				top: 18px;
+				left: 0;
+				right: 0;
+				bottom: 10px;
+				background: var(--face);
+				overflow: auto;
+				padding: 6px;
+			}
+			.window .status {
+				position: absolute;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				height: 10px;
+				background: var(--hi);
+				border-top: 1px solid var(--border-dark);
+				font-size: 10px;
+				display: flex;
+				align-items: center;
+				padding: 0 4px;
+				gap: 8px;
+			}
+			.resize {
+				position: absolute;
+				right: 0;
+				bottom: 0;
+				width: 14px;
+				height: 14px;
+				background: linear-gradient(
+						45deg,
+						transparent 8px,
+						var(--border-dark) 8px,
+						var(--border-dark) 9px,
+						transparent 9px
+					),
+					linear-gradient(
+						45deg,
+						transparent 10px,
+						var(--white) 10px,
+						var(--white) 11px,
+						transparent 11px
+					);
+				cursor: nwse-resize;
+			}
+
+			/* ---------- Finder window ---------- */
+			.finder-toolbar {
+				display: flex;
+				gap: 6px;
+				align-items: center;
+				margin-bottom: 6px;
+			}
+			.finder-path {
+				flex: 1;
+				padding: 2px 4px;
+				background: var(--hi);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white);
+			}
+			.finder-viewbtn {
+				padding: 2px 6px;
+				background: var(--button);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white);
+			}
+			.finder-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, 96px);
+				gap: 10px;
+				align-content: start;
+			}
+			.finder-grid .icon {
+				position: relative;
+			}
+			.finder-list {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			.finder-list th,
+			.finder-list td {
+				border-bottom: 1px solid var(--border-dark);
+				padding: 2px 6px;
+				text-align: left;
+				font-size: 13px;
+			}
+			.finder-list th {
+				background: var(--hi);
+			}
+
+			/* ---------- Calculator ---------- */
+			.calc {
+				width: 220px;
+				margin: 0 auto;
+				background: var(--hi);
+				padding: 6px;
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white);
+			}
+			.calc-display {
+				height: 32px;
+				background: var(--white);
+				border: 1px solid var(--border-dark);
+				text-align: right;
+				padding: 4px;
+				font-size: 18px;
+				box-shadow: inset 1px 1px 0 var(--white);
+			}
+			.calc-keys {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 4px;
+				margin-top: 6px;
+			}
+			.calc-keys button {
+				padding: 6px;
+				background: var(--button);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white);
+				font: inherit;
+				cursor: default;
+			}
+			.calc-keys button:active {
+				background: var(--button-press);
+			}
+
+			/* ---------- SimpleText ---------- */
+			.st-toolbar {
+				display: flex;
+				gap: 6px;
+				margin-bottom: 6px;
+				align-items: center;
+			}
+			.st-btn {
+				padding: 2px 6px;
+				background: var(--button);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white);
+				cursor: default;
+			}
+			.st-editor {
+				width: 100%;
+				height: calc(100% - 26px);
+				background: var(--white);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white);
+				padding: 6px;
+				overflow: auto;
+				white-space: pre-wrap;
+				font-family: 'Courier New', Courier, monospace;
+			}
+			.st-editor.nowrap {
+				white-space: pre;
+				overflow: auto;
+			}
+
+			/* ---------- Clock ---------- */
+			.clock {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100%;
+			}
+			.clock-digital {
+				font-size: 28px;
+				letter-spacing: 1px;
+			}
+			.clock-analog {
+				width: 160px;
+				height: 160px;
+				background: var(--white);
+				border: 2px solid var(--ink);
+				border-radius: 50%;
+				position: relative;
+			}
+			.tick {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				width: 2px;
+				height: 72px;
+				background: #000;
+				transform-origin: bottom center;
+			}
+			.tick.min {
+				height: 64px;
+				background: #222;
+			}
+			.tick.sec {
+				height: 76px;
+				background: #7a0000;
+			}
+
+			/* ---------- Alerts & context menus ---------- */
+			#ctx {
+				position: fixed;
+				top: 0;
+				left: 0;
+				display: none;
+				background: var(--menuBG);
+				border: 1px solid var(--menuBorder);
+				box-shadow: 2px 2px 0 var(--border-dark), 1px 1px 0 var(--white) inset;
+				z-index: 10002;
+				min-width: 160px;
+			}
+			#ctx .menu-item {
+				padding: 6px 10px;
+			}
+			.modal-scrim {
+				position: fixed;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.2);
+				display: none;
+				z-index: 10002;
+			}
+			.alert {
+				position: fixed;
+				min-width: 280px;
+				max-width: 420px;
+				background: var(--alertBG);
+				border: 1px solid var(--border-dark);
+				box-shadow: 2px 2px 0 var(--border-dark), inset 1px 1px 0 var(--white);
+				z-index: 10003;
+				padding-bottom: 8px;
+			}
+			.alert .titlebar {
+				cursor: default;
+			}
+			.alert .msg {
+				padding: 8px 12px;
+			}
+			.alert .actions {
+				display: flex;
+				justify-content: flex-end;
+				gap: 6px;
+				padding: 0 8px;
+			}
+			.alert button {
+				padding: 2px 8px;
+				background: var(--button);
+				border: 1px solid var(--border-dark);
+				box-shadow: inset 1px 1px 0 var(--white);
+				cursor: default;
+			}
+
+			/* ---------- Boot screen ---------- */
+			#boot {
+				position: fixed;
+				inset: 0;
+				background: #000;
+				color: #fff;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-direction: column;
+				gap: 16px;
+				z-index: 20000;
+			}
+			.boot-card {
+				background: #fff;
+				color: #000;
+				border: 2px solid #000;
+				padding: 18px 24px;
+				text-align: center;
+				box-shadow: 4px 4px 0 #333;
+			}
+			.boot-btn {
+				padding: 6px 10px;
+				border: 1px solid #000;
+				background: #eaeaea;
+				cursor: pointer;
+			}
+			.boot-note {
+				color: #9a9a9a;
+				font-size: 12px;
+			}
+
+			/* ---------- Utility ---------- */
+			.hidden {
+				display: none !important;
+			}
+			.center {
+				text-align: center;
+			}
+			hr.sep {
+				border: none;
+				height: 1px;
+				background: var(--border-dark);
+				margin: 6px 0;
+			}
+
+			/* Cursor affordances */
+			.draggable {
+				cursor: move;
+			}
+			.resizing,
+			.dragging {
+				cursor: grabbing;
+			}
+			.resize-nwse {
+				cursor: nwse-resize;
+			}
+			.resize-nesw {
+				cursor: nesw-resize;
+			}
+
+			/* Scrollbar-ish old look */
+			::-webkit-scrollbar {
+				width: 12px;
+				height: 12px;
+			}
+			::-webkit-scrollbar-thumb {
+				background: var(--lo);
+				border: 2px solid var(--face);
+			}
+			::-webkit-scrollbar-corner {
+				background: var(--face);
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Boot screen -->
+		<div id="boot">
+			<div class="boot-card">
+				<div style="font-size: 32px; margin-bottom: 8px">😊</div>
+				<div style="font-weight: bold; margin-bottom: 6px">
+					Welcome to Macintosh
+				</div>
+				<div style="font-size: 12px; margin-bottom: 12px">
+					System 7.5 — Web Edition
+				</div>
+				<button
+					class="boot-btn"
+					id="bootBtn"
+					aria-label="Start the Mac"
+				>
+					Start
+				</button>
+				<div class="boot-note">Audio requires a click in modern browsers.</div>
+			</div>
+		</div>
+
+		<!-- Menu bar -->
+		<div
+			id="menubar"
+			class="inset"
+		>
+			<div
+				id="apple"
+				tabindex="0"
+				class="menu"
+			>
+				<span class="menu-title"></span>
+				<div class="menu-popup">
+					<div
+						class="menu-item"
+						data-action="about"
+					>
+						About This Mac…
+					</div>
+					<div
+						class="menu-item"
+						data-action="control-panel"
+					>
+						Control Panels…
+					</div>
+					<div class="menu-sep"></div>
+					<div
+						class="menu-item"
+						data-action="restart"
+					>
+						Restart…
+					</div>
+					<div
+						class="menu-item"
+						data-action="shutdown"
+					>
+						Shut Down…
+					</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				data-menu="File"
+				tabindex="0"
+			>
+				<span class="menu-title">File</span>
+				<div class="menu-popup">
+					<div
+						class="menu-item"
+						data-action="new-folder"
+					>
+						New Folder <span class="kbd">⌘N</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="open"
+					>
+						Open <span class="kbd">⌘O</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="close-window"
+					>
+						Close Window <span class="kbd">⌘W</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="get-info"
+					>
+						Get Info <span class="kbd">⌘I</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="trash"
+					>
+						Put Away / Trash <span class="kbd">⌘⌫</span>
+					</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				data-menu="Edit"
+				tabindex="0"
+			>
+				<span class="menu-title">Edit</span>
+				<div class="menu-popup">
+					<div
+						class="menu-item"
+						data-action="cut"
+					>
+						Cut <span class="kbd">⌘X</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="copy"
+					>
+						Copy <span class="kbd">⌘C</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="paste"
+					>
+						Paste <span class="kbd">⌘V</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="select-all"
+					>
+						Select All <span class="kbd">⌘A</span>
+					</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				data-menu="View"
+				tabindex="0"
+			>
+				<span class="menu-title">View</span>
+				<div class="menu-popup">
+					<div
+						class="menu-item"
+						data-action="view-icons"
+					>
+						as Icons <span class="kbd">⌘1</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="view-list"
+					>
+						as List <span class="kbd">⌘2</span>
+					</div>
+					<div
+						class="menu-item"
+						data-action="arrange-name"
+					>
+						Arrange by Name
+					</div>
+				</div>
+			</div>
+			<div
+				class="menu"
+				data-menu="Special"
+				tabindex="0"
+			>
+				<span class="menu-title">Special</span>
+				<div class="menu-popup">
+					<div
+						class="menu-item"
+						data-action="empty-trash"
+					>
+						Empty Trash
+					</div>
+					<div
+						class="menu-item"
+						data-action="toggle-windowshade"
+					>
+						Toggle WindowShade (title dbl‑click)
+					</div>
+					<div class="menu-sep"></div>
+					<div
+						class="menu-item"
+						data-action="bomb"
+					>
+						Bomb… <span class="badge">Easter Egg</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Desktop -->
+		<div id="desktop"></div>
+		<div id="shelf"></div>
+
+		<!-- Context menu -->
+		<div
+			id="ctx"
+			class="inset"
+		></div>
+
+		<!-- Modal scrim & alerts -->
+		<div
+			id="scrim"
+			class="modal-scrim"
+		></div>
+
+		<script>
+			/* =============================================================
+   System 7.5 — Web Edition
+   Single-file OS simulation with small, maintainable modules.
+   ============================================================= */
+			;(function () {
+				'use strict'
+
+				/* ---------- Utilities ---------- */
+				const Util = {
+					el(tag, attrs = {}, ...children) {
+						const e = document.createElement(tag)
+						for (const [k, v] of Object.entries(attrs)) {
+							if (k === 'class') e.className = v
+							else if (k === 'style') Object.assign(e.style, v)
+							else if (k.startsWith('on') && typeof v === 'function')
+								e.addEventListener(k.substring(2), v)
+							else if (v !== null && v !== undefined) e.setAttribute(k, v)
+						}
+						for (const c of children) {
+							if (c == null) continue
+							e.appendChild(
+								typeof c === 'string' ? document.createTextNode(c) : c
+							)
+						}
+						return e
+					},
+					clamp(n, a, b) {
+						return Math.max(a, Math.min(b, n))
+					},
+					fmtBytes(n) {
+						if (n == null || isNaN(n)) return ''
+						if (n < 1024) return n + ' B'
+						const units = ['KB', 'MB', 'GB', 'TB']
+						let i = -1
+						do {
+							n = n / 1024
+							i++
+						} while (n >= 1024 && i < units.length - 1)
+						return n.toFixed(1) + ' ' + units[i]
+					},
+					now() {
+						return Date.now()
+					},
+					uid(prefix = 'id') {
+						return prefix + '_' + Math.random().toString(36).slice(2, 8)
+					},
+					isMac: /Mac|iPhone|iPad|iPod/.test(navigator.platform),
+				}
+
+				/* ---------- Audio (chime + beep) ---------- */
+				const AudioFX = (function () {
+					let ctx = null,
+						volume = 0.4
+					function ensure() {
+						if (!ctx)
+							ctx = new (window.AudioContext || window.webkitAudioContext)()
+					}
+					function setVolume(v) {
+						volume = Util.clamp(v, 0, 1)
+					}
+					function beep(freq = 880, ms = 110) {
+						ensure()
+						const o = ctx.createOscillator()
+						const g = ctx.createGain()
+						o.type = 'square'
+						o.frequency.value = freq
+						g.gain.value = volume * 0.2
+						o.connect(g).connect(ctx.destination)
+						o.start()
+						setTimeout(() => {
+							o.stop()
+						}, ms)
+					}
+					function chime() {
+						ensure()
+						// Simple "Mac-ish" startup chord (not the original): C major arpeggio
+						const g = ctx.createGain()
+						g.gain.value = volume * 0.35
+						g.connect(ctx.destination)
+						const freqs = [261.63, 329.63, 392.0, 523.25] // C E G C
+						const now = ctx.currentTime
+						freqs.forEach((f, i) => {
+							const o = ctx.createOscillator()
+							o.type = 'sine'
+							o.frequency.value = f
+							o.connect(g)
+							o.start(now + i * 0.05)
+							o.stop(now + 1.2 + i * 0.05)
+						})
+					}
+					return { beep, chime, setVolume }
+				})()
+
+				/* ---------- File System (virtual) ---------- */
+				class FSNode {
+					constructor({
+						type,
+						name,
+						children = null,
+						content = '',
+						app = null,
+						size = 0,
+						modified = Date.now(),
+					}) {
+						this.type = type // 'folder'|'text'|'app'|'trash'|'file'
+						this.name = name
+						this.children = children
+						this.content = content
+						this.app = app
+						this.size = size
+						this.modified = modified
+					}
+				}
+
+				const FileSystem = (function () {
+					const root = new FSNode({ type: 'folder', name: '/', children: {} })
+
+					function addPath(path, node) {
+						const parts = path.split('/').filter(Boolean)
+						let cur = root
+						for (let i = 0; i < parts.length - 1; i++) {
+							const p = parts[i]
+							if (!cur.children[p])
+								cur.children[p] = new FSNode({
+									type: 'folder',
+									name: p,
+									children: {},
+								})
+							cur = cur.children[p]
+							if (cur.type !== 'folder')
+								throw new Error('Path collision at ' + p)
+						}
+						cur.children[parts[parts.length - 1]] = node
+					}
+					function getNode(path) {
+						if (path === '/' || path === '') return root
+						const parts = path.split('/').filter(Boolean)
+						let cur = root
+						for (const p of parts) {
+							if (!cur.children || !cur.children[p]) return null
+							cur = cur.children[p]
+						}
+						return cur
+					}
+					function list(path) {
+						const n = getNode(path)
+						if (!n || n.type !== 'folder') return []
+						return Object.values(n.children)
+					}
+					function mkdir(parentPath, name) {
+						const folder = getNode(parentPath)
+						if (!folder || folder.type !== 'folder') return false
+						if (folder.children[name]) return false
+						folder.children[name] = new FSNode({
+							type: 'folder',
+							name,
+							children: {},
+						})
+						return true
+					}
+					function createText(parentPath, name, content = '') {
+						const folder = getNode(parentPath)
+						if (!folder || folder.type !== 'folder') return false
+						if (folder.children[name]) return false
+						folder.children[name] = new FSNode({
+							type: 'text',
+							name,
+							content,
+							size: content.length,
+						})
+						return true
+					}
+					function createApp(parentPath, name, appId) {
+						const folder = getNode(parentPath)
+						if (!folder || folder.type !== 'folder') return false
+						folder.children[name] = new FSNode({
+							type: 'app',
+							name,
+							app: appId,
+						})
+						return true
+					}
+					function remove(path) {
+						const parts = path.split('/').filter(Boolean)
+						const name = parts.pop()
+						const parent = getNode('/' + parts.join('/'))
+						if (parent && parent.children && parent.children[name]) {
+							delete parent.children[name]
+							return true
+						}
+						return false
+					}
+					function move(srcPath, dstFolderPath) {
+						const srcNode = getNode(srcPath)
+						const dstFolder = getNode(dstFolderPath)
+						if (!srcNode || !dstFolder || dstFolder.type !== 'folder')
+							return false
+						const srcParts = srcPath.split('/').filter(Boolean)
+						const srcName = srcParts.pop()
+						const srcParent = getNode('/' + srcParts.join('/'))
+						let newName = srcNode.name
+						// Avoid name collisions
+						let i = 1
+						while (dstFolder.children[newName]) {
+							const base = srcNode.name.replace(/(\.\w+)?$/, '')
+							const ext = srcNode.name.match(/(\.\w+)$/)?.[1] || ''
+							newName = base + ' ' + i + ext
+							i++
+						}
+						srcNode.name = newName
+						dstFolder.children[newName] = srcNode
+						delete srcParent.children[srcName]
+						return (
+							'/' +
+							[...dstFolderPath.split('/').filter(Boolean), newName].join('/')
+						)
+					}
+
+					// Initialize default tree
+					;(function init() {
+						addPath(
+							'/Desktop',
+							new FSNode({ type: 'folder', name: 'Desktop', children: {} })
+						)
+						addPath('/Trash', new FSNode({ type: 'trash', name: 'Trash' }))
+						addPath(
+							'/Macintosh HD',
+							new FSNode({ type: 'folder', name: 'Macintosh HD', children: {} })
+						)
+						addPath(
+							'/Macintosh HD/Applications',
+							new FSNode({ type: 'folder', name: 'Applications', children: {} })
+						)
+						addPath(
+							'/Macintosh HD/Documents',
+							new FSNode({ type: 'folder', name: 'Documents', children: {} })
+						)
+						createText(
+							'/Macintosh HD',
+							'ReadMe.txt',
+							`System 7.5 — Web Edition
+
+• Double‑click icons to open.
+• Titlebar buttons: close, minimize, zoom.
+• Right‑click for context menus.
+• SimpleText can save to Documents.
+• Control Panel changes pattern & volume.
+• WindowShade: double‑click a titlebar.
+• Cmd shortcuts work: N,O,W,A,I,Backspace,1,2…
+
+Easter eggs? Try Special ▸ Bomb… or About with ⌥ held.`
+						)
+						createApp(
+							'/Macintosh HD/Applications',
+							'Calculator.app',
+							'calculator'
+						)
+						createApp(
+							'/Macintosh HD/Applications',
+							'SimpleText.app',
+							'simpletext'
+						)
+						createApp('/Macintosh HD/Applications', 'Clock.app', 'clock')
+						createApp(
+							'/Macintosh HD/Applications',
+							'Control Panel.app',
+							'control'
+						)
+						// Desktop aliases/apps
+						createApp('/Desktop', 'Calculator', 'calculator')
+						createApp('/Desktop', 'SimpleText', 'simpletext')
+						createApp('/Desktop', 'Clock', 'clock')
+						createApp('/Desktop', 'Control Panel', 'control')
+						// Also put Macintosh HD on Desktop
+						addPath('/Desktop/Macintosh HD', getNode('/Macintosh HD'))
+						addPath('/Desktop/Trash', getNode('/Trash'))
+					})()
+
+					return {
+						root,
+						getNode,
+						list,
+						mkdir,
+						createText,
+						createApp,
+						remove,
+						move,
+					}
+				})()
+
+				/* ---------- Icons (inline SVG) ---------- */
+				function iconSVG(kind) {
+					const stroke = '#000',
+						fill = '#000'
+					switch (kind) {
+						case 'drive':
+							return `<svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="18" fill="none" stroke="${stroke}" stroke-width="2"/><rect x="8" y="10" width="16" height="6" fill="${fill}"/></svg>`
+						case 'folder':
+							return `<svg viewBox="0 0 32 32"><path d="M3 10h10l3 3h13v13H3z" fill="none" stroke="${stroke}" stroke-width="2"/><rect x="3" y="10" width="10" height="3" fill="${fill}"/></svg>`
+						case 'text':
+							return `<svg viewBox="0 0 32 32"><rect x="7" y="4" width="18" height="24" fill="none" stroke="${stroke}" stroke-width="2"/><line x1="10" y1="10" x2="22" y2="10" stroke="${stroke}" stroke-width="2"/><line x1="10" y1="15" x2="22" y2="15" stroke="${stroke}" stroke-width="2"/><line x1="10" y1="20" x2="22" y2="20" stroke="${stroke}" stroke-width="2"/></svg>`
+						case 'calc':
+							return `<svg viewBox="0 0 32 32"><rect x="7" y="4" width="18" height="24" fill="none" stroke="${stroke}" stroke-width="2"/><rect x="10" y="8" width="12" height="6" fill="${fill}"/><g fill="none" stroke="${stroke}" stroke-width="2"><rect x="10" y="16" width="4" height="4"/><rect x="16" y="16" width="4" height="4"/><rect x="22" y="16" width="4" height="4"/><rect x="10" y="22" width="4" height="4"/><rect x="16" y="22" width="4" height="4"/><rect x="22" y="22" width="4" height="4"/></g></svg>`
+						case 'clock':
+							return `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="${stroke}" stroke-width="2"/><line x1="16" y1="16" x2="16" y2="8" stroke="${stroke}" stroke-width="2"/><line x1="16" y1="16" x2="22" y2="16" stroke="${stroke}" stroke-width="2"/></svg>`
+						case 'control':
+							return `<svg viewBox="0 0 32 32"><circle cx="12" cy="12" r="6" fill="none" stroke="${stroke}" stroke-width="2"/><circle cx="20" cy="20" r="6" fill="none" stroke="${stroke}" stroke-width="2"/><line x1="7" y1="12" x2="17" y2="12" stroke="${stroke}" stroke-width="2"/><line x1="15" y1="20" x2="25" y2="20" stroke="${stroke}" stroke-width="2"/></svg>`
+						case 'trash':
+							return `<svg viewBox="0 0 32 32"><rect x="10" y="10" width="12" height="16" fill="none" stroke="${stroke}" stroke-width="2"/><rect x="8" y="8" width="16" height="2" fill="${fill}"/><line x1="13" y1="12" x2="13" y2="24" stroke="${stroke}" stroke-width="2"/><line x1="19" y1="12" x2="19" y2="24" stroke="${stroke}" stroke-width="2"/></svg>`
+						default:
+							return `<svg viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="20" fill="none" stroke="${stroke}" stroke-width="2"/></svg>`
+					}
+				}
+				function iconForNode(node) {
+					if (node.type === 'folder') return 'folder'
+					if (node.type === 'text') return 'text'
+					if (node.type === 'trash') return 'trash'
+					if (node.type === 'app') {
+						switch (node.app) {
+							case 'calculator':
+								return 'calc'
+							case 'simpletext':
+								return 'text'
+							case 'clock':
+								return 'clock'
+							case 'control':
+								return 'control'
+						}
+					}
+					if (node.name === 'Macintosh HD') return 'drive'
+					return 'file'
+				}
+
+				/* ---------- Window Manager ---------- */
+				const WM = (function () {
+					const desktop = document.getElementById('desktop')
+					const shelf = document.getElementById('shelf')
+					let z = 50
+					const windows = new Map() // id -> win
+
+					function bringToFront(win) {
+						z += 1
+						win.el.style.zIndex = z
+						for (const w of windows.values()) {
+							w.el.classList.add('inactive')
+						}
+						win.el.classList.remove('inactive')
+						State.activeWindow = win
+					}
+					function makeWindow({
+						title,
+						w = 380,
+						h = 280,
+						x = 60,
+						y = 60,
+						resizable = true,
+						content = null,
+						onClose = null,
+						appId = null,
+					}) {
+						const id = Util.uid('win')
+						const el = Util.el('div', {
+							class: 'window',
+							'data-id': id,
+							style: {
+								left: x + 'px',
+								top: y + 'px',
+								width: w + 'px',
+								height: h + 'px',
+							},
+						})
+						const tb = Util.el(
+							'div',
+							{ class: 'titlebar' },
+							Util.el(
+								'div',
+								{ class: 'buttons' },
+								Util.el('div', { class: 'btn close', title: 'Close' }),
+								Util.el('div', { class: 'btn min', title: 'Minimize' }),
+								Util.el('div', { class: 'btn zoom', title: 'Zoom' })
+							),
+							Util.el('div', { class: 'title' }, title)
+						)
+						const ct = Util.el('div', { class: 'content' })
+						const st = Util.el('div', { class: 'status' }, 'Ready.')
+						const rz = Util.el('div', { class: 'resize' })
+						el.append(tb, ct, st, rz)
+						desktop.appendChild(el)
+
+						const win = {
+							id,
+							el,
+							tb,
+							ct,
+							st,
+							rz,
+							onClose,
+							appId,
+							title,
+							x,
+							y,
+							w,
+							h,
+							minimized: false,
+							shaded: false,
+						}
+						windows.set(id, win)
+
+						// Dragging
+						let drag = null
+						tb.addEventListener('mousedown', (e) => {
+							if (e.target.classList.contains('btn')) return
+							bringToFront(win)
+							drag = {
+								dx: e.clientX - el.offsetLeft,
+								dy: e.clientY - el.offsetTop,
+							}
+							document.body.classList.add('dragging')
+							e.preventDefault()
+						})
+						document.addEventListener('mousemove', (e) => {
+							if (!drag) return
+							const nx = Util.clamp(
+								e.clientX - drag.dx,
+								0,
+								window.innerWidth - el.offsetWidth
+							)
+							const ny = Util.clamp(
+								e.clientY - drag.dy,
+								24,
+								window.innerHeight - 22 - el.offsetHeight
+							)
+							el.style.left = nx + 'px'
+							el.style.top = ny + 'px'
+						})
+						document.addEventListener('mouseup', () => {
+							if (drag) {
+								document.body.classList.remove('dragging')
+								drag = null
+							}
+						})
+
+						// Resize
+						let rs = null
+						rz.addEventListener('mousedown', (e) => {
+							bringToFront(win)
+							rs = {
+								sx: e.clientX,
+								sy: e.clientY,
+								w: el.offsetWidth,
+								h: el.offsetHeight,
+							}
+							document.body.classList.add('resizing')
+							e.preventDefault()
+						})
+						document.addEventListener('mousemove', (e) => {
+							if (!rs) return
+							const nw = Util.clamp(
+								rs.w + (e.clientX - rs.sx),
+								240,
+								window.innerWidth - el.offsetLeft
+							)
+							const nh = Util.clamp(
+								rs.h + (e.clientY - rs.sy),
+								120,
+								window.innerHeight - el.offsetTop
+							)
+							el.style.width = nw + 'px'
+							el.style.height = nh + 'px'
+						})
+						document.addEventListener('mouseup', () => {
+							if (rs) {
+								document.body.classList.remove('resizing')
+								rs = null
+							}
+						})
+
+						// Buttons
+						tb.querySelector('.btn.close').addEventListener('click', () => {
+							if (win.onClose && win.onClose() === false) return
+							el.remove()
+							windows.delete(id)
+							if (State.activeWindow && State.activeWindow.id === id)
+								State.activeWindow = null
+						})
+						tb.querySelector('.btn.min').addEventListener('click', () => {
+							minimize(win)
+						})
+						tb.querySelector('.btn.zoom').addEventListener('click', () => {
+							// simple toggle maximize to viewport bounds
+							const maximized = el.dataset.max === '1'
+							if (!maximized) {
+								el.dataset.prev = JSON.stringify({
+									left: el.style.left,
+									top: el.style.top,
+									width: el.style.width,
+									height: el.style.height,
+								})
+								el.style.left = '12px'
+								el.style.top = '36px'
+								el.style.width = window.innerWidth - 24 + 'px'
+								el.style.height = window.innerHeight - 60 + 'px'
+								el.dataset.max = '1'
+							} else {
+								const prev = JSON.parse(el.dataset.prev || '{}')
+								Object.assign(el.style, prev)
+								el.dataset.max = '0'
+							}
+						})
+
+						// WindowShade (dblclick titlebar)
+						tb.addEventListener('dblclick', () => {
+							if (!State.windowShadeEnabled) return
+							win.shaded = !win.shaded
+							if (win.shaded) {
+								win.ct.style.display = 'none'
+								win.st.style.display = 'none'
+								win.rz.style.display = 'none'
+								el.style.height = '18px'
+							} else {
+								win.ct.style.display = ''
+								win.st.style.display = ''
+								win.rz.style.display = ''
+								el.style.height = (win.h || 280) + 'px'
+							}
+						})
+
+						// Activate on mouse down
+						el.addEventListener('mousedown', () => bringToFront(win))
+
+						// Content
+						if (typeof content === 'function') content(win)
+						else if (content) ct.appendChild(content)
+
+						bringToFront(win)
+						return win
+					}
+
+					function minimize(win) {
+						if (win.minimized) return
+						win.minimized = true
+						win.el.style.display = 'none'
+						const item = Util.el(
+							'div',
+							{ class: 'shelf-item', 'data-win': win.id },
+							'▣ ' + win.title
+						)
+						item.addEventListener('click', () => {
+							win.el.style.display = ''
+							bringToFront(win)
+							item.remove()
+							win.minimized = false
+						})
+						shelf.appendChild(item)
+					}
+
+					function windowsForApp(appId) {
+						return Array.from(windows.values()).filter((w) => w.appId === appId)
+					}
+
+					return { makeWindow, bringToFront, minimize, windowsForApp }
+				})()
+
+				/* ---------- State & Settings ---------- */
+				const State = {
+					activeWindow: null,
+					windowShadeEnabled: true,
+					viewMode: 'icons', // for Finder
+					volume: 0.4,
+					patternIndex: 0,
+					clockStyle: 'digital',
+				}
+
+				/* ---------- Desktop & Icons ---------- */
+				const Desktop = (function () {
+					const desk = document.getElementById('desktop')
+					let iconPositions = {} // name -> {x,y}
+					let selected = new Set()
+					let lastClick = 0
+
+					function placeIcon(name, x, y) {
+						iconPositions[name] = { x, y }
+					}
+
+					function makeIconEl(node, path) {
+						const name = node.name
+						const pos = iconPositions[name] || {
+							x: 20 + Math.random() * 200,
+							y: 40 + Math.random() * 120,
+						}
+						const icon = Util.el('div', {
+							class: 'icon',
+							'data-path': path,
+							style: { left: pos.x + 'px', top: pos.y + 'px' },
+						})
+						const img = Util.el('div', { class: 'img' })
+						img.innerHTML = iconSVG(iconForNode(node))
+						const label = Util.el('div', { class: 'label' }, name)
+						icon.append(img, label)
+						desk.appendChild(icon)
+
+						// selection
+						icon.addEventListener('mousedown', (e) => {
+							if (!e.shiftKey) clearSelection()
+							toggleSelect(icon, true)
+							e.stopPropagation()
+						})
+						icon.addEventListener('click', (e) => {
+							const now = Util.now()
+							if (now - lastClick < 300) {
+								openIcon(path, node)
+							}
+							lastClick = now
+						})
+						// rename on Enter
+						icon.addEventListener('keydown', (e) => {
+							if (e.key === 'Enter') {
+								beginRename(icon, path, node)
+								e.preventDefault()
+							}
+						})
+						icon.tabIndex = 0
+
+						// drag
+						let drag = null
+						icon.addEventListener('mousedown', (e) => {
+							if (e.button !== 0) return
+							const rect = icon.getBoundingClientRect()
+							drag = {
+								dx: e.clientX - rect.left,
+								dy: e.clientY - rect.top,
+								startX: rect.left,
+								startY: rect.top,
+								moved: false,
+							}
+							document.addEventListener('mousemove', onMove)
+							document.addEventListener('mouseup', onUp)
+							document.body.classList.add('dragging')
+							function onMove(ev) {
+								drag.moved = true
+								const nx = Util.clamp(
+									ev.clientX - drag.dx,
+									0,
+									window.innerWidth - 80
+								)
+								const ny = Util.clamp(
+									ev.clientY - drag.dy,
+									24,
+									window.innerHeight - 60
+								)
+								icon.style.left = nx + 'px'
+								icon.style.top = ny + 'px'
+							}
+							function onUp(ev) {
+								document.removeEventListener('mousemove', onMove)
+								document.removeEventListener('mouseup', onUp)
+								document.body.classList.remove('dragging')
+								placeIcon(
+									name,
+									parseInt(icon.style.left),
+									parseInt(icon.style.top)
+								)
+								// drop to Trash to delete
+								const dropPath = hitTrash(ev.clientX, ev.clientY)
+								if (dropPath && path !== '/Desktop/Trash') {
+									if (confirm('Move “' + name + '” to the Trash?')) {
+										FileSystem.remove(path)
+										icon.remove()
+										AudioFX.beep()
+									}
+								}
+							}
+						})
+
+						// context menu
+						icon.addEventListener('contextmenu', (e) => {
+							e.preventDefault()
+							ContextMenu.show(e.clientX, e.clientY, [
+								{ label: 'Open', action: () => openIcon(path, node) },
+								{ label: 'Get Info', action: () => Info.show(node, path) },
+								{
+									label: 'Rename',
+									action: () => beginRename(icon, path, node),
+								},
+								{
+									label: 'Move to Trash',
+									disabled: path === '/Desktop/Trash',
+									action: () => {
+										if (path === '/Desktop/Trash') return
+										if (confirm('Move “' + name + '” to the Trash?')) {
+											FileSystem.remove(path)
+											icon.remove()
+											AudioFX.beep()
+										}
+									},
+								},
+							])
+						})
+
+						return icon
+					}
+
+					function beginRename(iconEl, path, node) {
+						const label = iconEl.querySelector('.label')
+						const input = Util.el('input', {
+							class: 'rename',
+							value: node.name,
+						})
+						label.replaceWith(input)
+						input.focus()
+						input.select()
+						input.addEventListener('keydown', (e) => {
+							if (e.key === 'Enter') commit()
+							if (e.key === 'Escape') {
+								cancel()
+							}
+						})
+						input.addEventListener('blur', commit)
+						function commit() {
+							const val = input.value.trim() || node.name
+							node.name = val
+							iconEl.setAttribute('data-path', path.replace(/[^\/]+$/, val))
+							const newLabel = Util.el('div', { class: 'label' }, val)
+							input.replaceWith(newLabel)
+						}
+						function cancel() {
+							const newLabel = Util.el('div', { class: 'label' }, node.name)
+							input.replaceWith(newLabel)
+						}
+					}
+
+					function clearSelection() {
+						selected.forEach((el) => el.classList.remove('selected'))
+						selected.clear()
+					}
+					function toggleSelect(el, on) {
+						if (on) {
+							el.classList.add('selected')
+							selected.add(el)
+						} else {
+							el.classList.remove('selected')
+							selected.delete(el)
+						}
+					}
+
+					function hitTrash(x, y) {
+						// naive: if pointer near the Trash icon coords (if present)
+						const trash = Array.from(desk.querySelectorAll('.icon')).find((e) =>
+							e.dataset.path.endsWith('/Trash')
+						)
+						if (!trash) return null
+						const r = trash.getBoundingClientRect()
+						return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+							? trash.dataset.path
+							: null
+					}
+
+					function openIcon(path, node) {
+						if (node.type === 'folder') {
+							Finder.open(path)
+						} else if (node.type === 'app') {
+							Apps.launch(node.app)
+						} else if (node.type === 'text') {
+							SimpleText.openText(path)
+						} else if (node.type === 'trash') {
+							Finder.open('/Trash')
+						} else {
+							Alerts.info('No application to open “' + node.name + '”.')
+							AudioFX.beep()
+						}
+					}
+
+					function populateDesktop() {
+						desk.innerHTML = ''
+						const items = FileSystem.list('/Desktop')
+						let x = 16,
+							y = 40
+						for (const n of items) {
+							const path = '/Desktop/' + n.name
+							const el = makeIconEl(n, path)
+							if (!iconPositions[n.name]) {
+								el.style.left = x + 'px'
+								el.style.top = y + 'px'
+								placeIcon(n.name, x, y)
+								y += 90
+								if (y > window.innerHeight - 200) {
+									y = 40
+									x += 100
+								}
+							}
+						}
+					}
+
+					desk.addEventListener('mousedown', () => {
+						clearSelection()
+					})
+
+					return { populateDesktop, openIcon, clearSelection }
+				})()
+
+				/* ---------- Context Menu ---------- */
+				const ContextMenu = (function () {
+					const ctx = document.getElementById('ctx')
+					function show(x, y, items) {
+						ctx.innerHTML = ''
+						items.forEach((it) => {
+							const el = Util.el(
+								'div',
+								{
+									class: 'menu-item' + (it.disabled ? ' disabled' : ''),
+									tabindex: 0,
+								},
+								it.label
+							)
+							if (!it.disabled)
+								el.addEventListener('click', () => {
+									hide()
+									it.action && it.action()
+								})
+							ctx.appendChild(el)
+						})
+						ctx.style.left = x + 'px'
+						ctx.style.top = y + 'px'
+						ctx.style.display = 'block'
+						const off = (ev) => {
+							if (!ctx.contains(ev.target)) {
+								hide()
+								document.removeEventListener('mousedown', off)
+							}
+						}
+						document.addEventListener('mousedown', off)
+					}
+					function hide() {
+						ctx.style.display = 'none'
+					}
+					return { show, hide }
+				})()
+
+				/* ---------- Alerts ---------- */
+				const Alerts = (function () {
+					const scrim = document.getElementById('scrim')
+					function show({
+						title = 'Alert',
+						message = '',
+						buttons = [{ label: 'OK' }],
+					} = {}) {
+						scrim.style.display = 'block'
+						const el = Util.el('div', {
+							class: 'alert',
+							role: 'dialog',
+							'aria-label': title,
+							style: { left: '50%', top: '30%', transform: 'translateX(-50%)' },
+						})
+						el.appendChild(
+							Util.el(
+								'div',
+								{ class: 'titlebar' },
+								Util.el(
+									'div',
+									{ class: 'buttons' },
+									Util.el('div', { class: 'btn close' })
+								),
+								Util.el('div', { class: 'title' }, title)
+							)
+						)
+						const msg = Util.el('div', { class: 'msg' }, message)
+						const actions = Util.el('div', { class: 'actions' })
+						buttons.forEach((b) => {
+							const btn = Util.el('button', {}, b.label)
+							btn.addEventListener('click', () => {
+								close()
+								b.onClick && b.onClick()
+							})
+							actions.appendChild(btn)
+						})
+						el.append(msg, actions)
+						document.body.appendChild(el)
+						el.querySelector('.btn.close').addEventListener('click', close)
+						function close() {
+							el.remove()
+							scrim.style.display = 'none'
+						}
+					}
+					function info(message, title = 'Information') {
+						show({ title, message, buttons: [{ label: 'OK' }] })
+					}
+					function confirm(message, onYes, title = 'Confirm') {
+						show({
+							title,
+							message,
+							buttons: [{ label: 'Cancel' }, { label: 'OK', onClick: onYes }],
+						})
+					}
+					return { show, info, confirm }
+				})()
+
+				/* ---------- Menu Bar Logic ---------- */
+				const Menus = (function () {
+					const menubar = document.getElementById('menubar')
+					menubar.addEventListener('click', (e) => {
+						const m = e.target.closest('.menu')
+						if (!m) return
+						for (const other of menubar.querySelectorAll('.menu')) {
+							if (other !== m) other.classList.remove('open')
+						}
+						m.classList.toggle('open')
+					})
+					document.addEventListener('mousedown', (e) => {
+						if (!menubar.contains(e.target)) {
+							for (const other of menubar.querySelectorAll('.menu'))
+								other.classList.remove('open')
+						}
+					})
+					menubar.addEventListener('click', (e) => {
+						const item = e.target.closest('.menu-item')
+						if (!item) return
+						const action = item.dataset.action
+						if (action) ActionHandlers[action]?.()
+					})
+					return {}
+				})()
+
+				/* ---------- Finder ---------- */
+				const Finder = (function () {
+					function open(path = '/Macintosh HD') {
+						const node = FileSystem.getNode(path)
+						if (!node || node.type !== 'folder') {
+							Alerts.info('Folder not found.')
+							return
+						}
+						const title = path === '/Macintosh HD' ? 'Macintosh HD' : node.name
+						WM.makeWindow({
+							title,
+							w: 520,
+							h: 360,
+							content: (win) => {
+								const toolbar = Util.el(
+									'div',
+									{ class: 'finder-toolbar' },
+									Util.el(
+										'button',
+										{
+											class: 'finder-viewbtn',
+											onClick: () => setView(win, 'icons'),
+										},
+										'Icons'
+									),
+									Util.el(
+										'button',
+										{
+											class: 'finder-viewbtn',
+											onClick: () => setView(win, 'list'),
+										},
+										'List'
+									),
+									Util.el('div', { class: 'finder-path' }, path)
+								)
+								const pane = Util.el('div', {})
+								win.ct.append(toolbar, pane)
+								render(win, path, pane)
+							},
+						})
+					}
+
+					function setView(win, mode) {
+						State.viewMode = mode
+						const path = win.ct.querySelector('.finder-path').textContent
+						const pane = win.ct.lastChild
+						render(win, path, pane)
+					}
+
+					function render(win, path, pane) {
+						pane.innerHTML = ''
+						const items = FileSystem.list(path)
+							.slice()
+							.sort((a, b) => a.name.localeCompare(b.name))
+						if (State.viewMode === 'icons') {
+							const grid = Util.el('div', { class: 'finder-grid' })
+							for (const n of items) {
+								const icon = Util.el('div', {
+									class: 'icon',
+									'data-path': path + '/' + n.name,
+									style: { position: 'relative', left: '0', top: '0' },
+								})
+								const img = Util.el('div', { class: 'img' })
+								img.innerHTML = iconSVG(iconForNode(n))
+								const label = Util.el('div', { class: 'label' }, n.name)
+								icon.append(img, label)
+								grid.appendChild(icon)
+								icon.addEventListener('dblclick', () =>
+									Desktop.openIcon(path + '/' + n.name, n)
+								)
+								icon.addEventListener('contextmenu', (e) => {
+									e.preventDefault()
+									ContextMenu.show(e.clientX, e.clientY, [
+										{
+											label: 'Open',
+											action: () => Desktop.openIcon(path + '/' + n.name, n),
+										},
+										{
+											label: 'Get Info',
+											action: () => Info.show(n, path + '/' + n.name),
+										},
+										{
+											label: 'Move to Trash',
+											action: () => {
+												FileSystem.remove(path + '/' + n.name)
+												render(win, path, pane)
+												AudioFX.beep()
+											},
+										},
+									])
+								})
+							}
+							pane.appendChild(grid)
+						} else {
+							const table = Util.el('table', { class: 'finder-list' })
+							const thead = Util.el(
+								'thead',
+								{},
+								Util.el(
+									'tr',
+									{},
+									Util.el('th', {}, 'Name'),
+									Util.el('th', {}, 'Kind'),
+									Util.el('th', {}, 'Size'),
+									Util.el('th', {}, 'Modified')
+								)
+							)
+							const tbody = Util.el('tbody', {})
+							for (const n of items) {
+								const tr = Util.el(
+									'tr',
+									{},
+									Util.el('td', {}, n.name),
+									Util.el(
+										'td',
+										{},
+										n.type === 'folder'
+											? 'Folder'
+											: n.type === 'text'
+											? 'Text'
+											: 'Item'
+									),
+									Util.el(
+										'td',
+										{},
+										n.type === 'folder' ? '—' : Util.fmtBytes(n.size || 0)
+									),
+									Util.el('td', {}, new Date(n.modified).toLocaleString())
+								)
+								tr.addEventListener('dblclick', () =>
+									Desktop.openIcon(path + '/' + n.name, n)
+								)
+								tr.addEventListener('contextmenu', (e) => {
+									e.preventDefault()
+									ContextMenu.show(e.clientX, e.clientY, [
+										{
+											label: 'Open',
+											action: () => Desktop.openIcon(path + '/' + n.name, n),
+										},
+										{
+											label: 'Get Info',
+											action: () => Info.show(n, path + '/' + n.name),
+										},
+										{
+											label: 'Move to Trash',
+											action: () => {
+												FileSystem.remove(path + '/' + n.name)
+												render(win, path, pane)
+												AudioFX.beep()
+											},
+										},
+									])
+								})
+								tbody.appendChild(tr)
+							}
+							table.append(thead, tbody)
+							pane.appendChild(table)
+						}
+						win.st.textContent = items.length + ' items'
+					}
+
+					return { open }
+				})()
+
+				/* ---------- Info ---------- */
+				const Info = (function () {
+					function show(node, path) {
+						const w = WM.makeWindow({
+							title: node.name + ' Info',
+							w: 320,
+							h: 220,
+							content: (win) => {
+								const box = Util.el(
+									'div',
+									{},
+									Util.el('div', {}, 'Kind: ', node.type),
+									Util.el('div', {}, 'Path: ', path),
+									Util.el(
+										'div',
+										{},
+										'Size: ',
+										node.type === 'folder' ? '—' : Util.fmtBytes(node.size || 0)
+									),
+									Util.el(
+										'div',
+										{},
+										'Modified: ',
+										new Date(node.modified).toLocaleString()
+									)
+								)
+								win.ct.appendChild(box)
+							},
+						})
+					}
+					return { show }
+				})()
+
+				/* ---------- Calculator App ---------- */
+				const Calculator = (function () {
+					let lastOp = null,
+						acc = 0,
+						entering = true,
+						displayEl = null
+
+					function inputDigit(d) {
+						if (entering)
+							displayEl.textContent =
+								displayEl.textContent === '0'
+									? String(d)
+									: displayEl.textContent + String(d)
+						else {
+							displayEl.textContent = String(d)
+							entering = true
+						}
+					}
+					function inputDot() {
+						if (!displayEl.textContent.includes('.'))
+							displayEl.textContent += '.'
+					}
+					function getVal() {
+						return parseFloat(displayEl.textContent) || 0
+					}
+					function setVal(v) {
+						displayEl.textContent = String(v)
+					}
+					function op(opr) {
+						const cur = getVal()
+						if (lastOp && !entering) {
+							// pressing operator twice, change operator
+							lastOp = opr
+							return
+						}
+						if (lastOp == null) {
+							acc = cur
+						} else {
+							acc = compute(lastOp, acc, cur)
+						}
+						setVal(acc)
+						entering = false
+						lastOp = opr
+					}
+					function compute(op, a, b) {
+						switch (op) {
+							case '+':
+								return a + b
+							case '−':
+								return a - b
+							case '×':
+								return a * b
+							case '÷':
+								return b === 0
+									? (Alerts.info('Division by zero.'), AudioFX.beep(), a)
+									: a / b
+						}
+						return b
+					}
+					function eq() {
+						const cur = getVal()
+						if (lastOp) {
+							acc = compute(lastOp, acc, cur)
+							setVal(acc)
+							lastOp = null
+							entering = false
+						}
+					}
+					function clearAll() {
+						displayEl.textContent = '0'
+						lastOp = null
+						acc = 0
+						entering = true
+					}
+					function percent() {
+						setVal(getVal() / 100)
+					}
+					function sign() {
+						setVal(-getVal())
+					}
+
+					function open() {
+						WM.makeWindow({
+							title: 'Calculator',
+							w: 260,
+							h: 300,
+							appId: 'calculator',
+							content: (win) => {
+								const calc = Util.el('div', { class: 'calc' })
+								displayEl = Util.el('div', { class: 'calc-display' }, '0')
+								const keys = [
+									'C',
+									'±',
+									'%',
+									'÷',
+									'7',
+									'8',
+									'9',
+									'×',
+									'4',
+									'5',
+									'6',
+									'−',
+									'1',
+									'2',
+									'3',
+									'+',
+									'0',
+									'0',
+									'.',
+									'=',
+								]
+								const grid = Util.el('div', { class: 'calc-keys' })
+								keys.forEach((k) => {
+									const b = Util.el('button', {}, k)
+									grid.appendChild(b)
+									b.addEventListener('click', () => {
+										if (/\d/.test(k)) inputDigit(Number(k))
+										else if (k === '.') {
+											inputDot()
+										} else if (k === 'C') {
+											clearAll()
+										} else if (k === '±') {
+											sign()
+										} else if (k === '%') {
+											percent()
+										} else if (['+', '−', '×', '÷'].includes(k)) {
+											op(k)
+										} else if (k === '=') {
+											eq()
+										}
+										AudioFX.beep(660, 40)
+									})
+								})
+								calc.append(displayEl, grid)
+								win.ct.appendChild(calc)
+
+								// Keyboard
+								win.el.addEventListener('keydown', (e) => {
+									if (/\d/.test(e.key)) inputDigit(Number(e.key))
+									else if (e.key === '.') {
+										inputDot()
+									} else if (e.key === '+') op('+')
+									else if (e.key === '-') op('−')
+									else if (e.key === '*') op('×')
+									else if (e.key === '/') op('÷')
+									else if (e.key === 'Enter' || e.key === '=') eq()
+									else if (e.key === 'Escape') clearAll()
+								})
+								win.el.tabIndex = 0
+								win.el.focus()
+							},
+						})
+					}
+					return { open }
+				})()
+
+				/* ---------- SimpleText App ---------- */
+				const SimpleText = (function () {
+					function openText(path) {
+						const node = FileSystem.getNode(path)
+						if (!node || node.type !== 'text') {
+							Alerts.info('Text file missing.')
+							return
+						}
+						open(node.name, node.content, path)
+					}
+					function open(name = 'Untitled', content = '', savePath = null) {
+						const wrapState = { on: true }
+						WM.makeWindow({
+							title: name + (savePath ? '' : ' (edited)'),
+							w: 520,
+							h: 420,
+							appId: 'simpletext',
+							content: (win) => {
+								const toolbar = Util.el(
+									'div',
+									{ class: 'st-toolbar' },
+									Util.el(
+										'button',
+										{ class: 'st-btn', onClick: () => save() },
+										'Save'
+									),
+									Util.el(
+										'button',
+										{
+											class: 'st-btn',
+											onClick: () => {
+												wrapState.on = !wrapState.on
+												editor.classList.toggle('nowrap', !wrapState.on)
+											},
+										},
+										'Word Wrap'
+									),
+									Util.el('div', {}, savePath ? 'Path: ' + savePath : 'Unsaved')
+								)
+								const editor = Util.el(
+									'div',
+									{ class: 'st-editor', contenteditable: 'true' },
+									content
+								)
+								win.ct.append(toolbar, editor)
+
+								function save() {
+									if (!savePath) {
+										// save into Documents
+										const fname =
+											prompt(
+												'Save As:',
+												name.endsWith('.txt') ? name : name + '.txt'
+											) || 'Untitled.txt'
+										FileSystem.createText(
+											'/Macintosh HD/Documents',
+											fname,
+											editor.innerText
+										)
+										win.title = fname
+										win.tb.querySelector('.title').textContent = fname
+										savePath = '/Macintosh HD/Documents/' + fname
+										toolbar.lastChild.textContent = 'Path: ' + savePath
+										Alerts.info('Saved to Documents.')
+									} else {
+										const node = FileSystem.getNode(savePath)
+										node.content = editor.innerText
+										node.size = node.content.length
+										node.modified = Date.now()
+										Alerts.info('Saved.')
+									}
+								}
+							},
+						})
+					}
+					function openApp() {
+						open('Untitled', '')
+					}
+					return { openText, open: openApp }
+				})()
+
+				/* ---------- Control Panel ---------- */
+				const Control = (function () {
+					function open() {
+						WM.makeWindow({
+							title: 'Control Panels',
+							w: 420,
+							h: 320,
+							appId: 'control',
+							content: (win) => {
+								const sec1 = Util.el(
+									'div',
+									{},
+									Util.el('b', {}, 'Sound'),
+									Util.el('br'),
+									'Volume: '
+								)
+								const vol = Util.el('input', {
+									type: 'range',
+									min: '0',
+									max: '1',
+									step: '0.01',
+									value: String(State.volume),
+								})
+								vol.addEventListener('input', () => {
+									State.volume = parseFloat(vol.value)
+									AudioFX.setVolume(State.volume)
+									AudioFX.beep(880, 60)
+								})
+								sec1.appendChild(vol)
+
+								const sec2 = Util.el(
+									'div',
+									{},
+									Util.el('b', {}, 'Desktop Pattern'),
+									Util.el('br')
+								)
+								const patterns = ['dots', 'grid', 'stripes']
+								const sel = Util.el(
+									'select',
+									{},
+									...patterns.map((p, i) =>
+										Util.el(
+											'option',
+											{ value: String(i), selected: i === State.patternIndex },
+											p
+										)
+									)
+								)
+								sel.addEventListener('change', () =>
+									setPattern(parseInt(sel.value, 10))
+								)
+								sec2.append('Pattern: ', sel)
+
+								const sec3 = Util.el(
+									'div',
+									{},
+									Util.el('b', {}, 'Clock'),
+									Util.el('br')
+								)
+								const cs = Util.el(
+									'select',
+									{},
+									Util.el(
+										'option',
+										{
+											value: 'digital',
+											selected: State.clockStyle === 'digital',
+										},
+										'Digital'
+									),
+									Util.el(
+										'option',
+										{
+											value: 'analog',
+											selected: State.clockStyle === 'analog',
+										},
+										'Analog'
+									)
+								)
+								cs.addEventListener(
+									'change',
+									() => (State.clockStyle = cs.value)
+								)
+								sec3.append('Style: ', cs)
+
+								win.ct.append(
+									sec1,
+									Util.el('hr', { class: 'sep' }),
+									sec2,
+									Util.el('hr', { class: 'sep' }),
+									sec3
+								)
+
+								function setPattern(i) {
+									State.patternIndex = i
+									const body = document.body
+									if (i === 0) {
+										body.style.backgroundImage =
+											'radial-gradient(var(--desk-pattern-dot) 12%, transparent 13%), radial-gradient(var(--desk-pattern-dot) 12%, transparent 13%)'
+										body.style.backgroundSize = '4px 4px'
+										body.style.backgroundPosition = '0 0, 2px 2px'
+									} else if (i === 1) {
+										body.style.backgroundImage =
+											'linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(180deg, rgba(0,0,0,0.06) 1px, transparent 1px)'
+										body.style.backgroundSize = '8px 8px'
+									} else {
+										body.style.backgroundImage =
+											'repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0, rgba(0,0,0,0.06) 2px, transparent 2px, transparent 8px)'
+										body.style.backgroundSize = 'auto'
+									}
+								}
+							},
+						})
+					}
+					return { open }
+				})()
+
+				/* ---------- Clock App ---------- */
+				const Clock = (function () {
+					let timer = null
+					function open() {
+						WM.makeWindow({
+							title: 'Clock',
+							w: 240,
+							h: 200,
+							appId: 'clock',
+							content: (win) => {
+								const box = Util.el('div', { class: 'clock' })
+								const digital = Util.el('div', {
+									class: 'clock-digital hidden',
+								})
+								const analog = Util.el('div', { class: 'clock-analog hidden' })
+								box.append(digital, analog)
+								win.ct.appendChild(box)
+
+								function update() {
+									if (State.clockStyle === 'digital') {
+										analog.classList.add('hidden')
+										digital.classList.remove('hidden')
+										const d = new Date()
+										digital.textContent = d.toLocaleTimeString()
+									} else {
+										digital.classList.add('hidden')
+										analog.classList.remove('hidden')
+										drawAnalog(analog)
+									}
+								}
+								update()
+								timer = setInterval(update, 1000)
+								win.onClose = () => {
+									clearInterval(timer)
+								}
+							},
+						})
+					}
+					function drawAnalog(container) {
+						container.innerHTML = ''
+						const cx = 80,
+							cy = 80
+						const face = container
+						// marks
+						for (let i = 0; i < 12; i++) {
+							const m = Util.el('div', {
+								style: {
+									position: 'absolute',
+									left: cx - 1 + 'px',
+									top: cy - 70 + 'px',
+									width: '2px',
+									height: '10px',
+									background: '#000',
+									transformOrigin: '1px 70px',
+									transform: `rotate(${i * 30}deg)`,
+								},
+							})
+							face.appendChild(m)
+						}
+						const now = new Date()
+						const s = now.getSeconds()
+						const m = now.getMinutes()
+						const h = now.getHours() % 12
+						const sAng = s * 6
+						const mAng = m * 6 + s * 0.1
+						const hAng = h * 30 + m * 0.5
+						const hour = Util.el('div', {
+							class: 'tick',
+							style: {
+								height: '44px',
+								background: '#000',
+								transform: `translate(-1px,0) rotate(${hAng}deg)`,
+							},
+						})
+						const min = Util.el('div', {
+							class: 'tick min',
+							style: { transform: `translate(-1px,0) rotate(${mAng}deg)` },
+						})
+						const sec = Util.el('div', {
+							class: 'tick sec',
+							style: {
+								background: '#7a0000',
+								transform: `translate(-1px,0) rotate(${sAng}deg)`,
+							},
+						})
+						face.append(hour, min, sec)
+					}
+					return { open }
+				})()
+
+				/* ---------- About This Mac ---------- */
+				const About = (function () {
+					function open(easter = false) {
+						const ua = navigator.userAgent
+						const mem =
+							performance &&
+							performance.memory &&
+							performance.memory.jsHeapSizeLimit
+								? (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(
+										0
+								  ) + ' MB'
+								: '—'
+						const title = 'About This Mac'
+						WM.makeWindow({
+							title,
+							w: 380,
+							h: 240,
+							content: (win) => {
+								const box = Util.el(
+									'div',
+									{ style: { textAlign: 'center' } },
+									Util.el(
+										'div',
+										{ style: { fontSize: '36px', margin: '8px' } },
+										'🙂'
+									),
+									Util.el('div', {}, 'System 7.5 — Web Edition'),
+									Util.el('div', {}, 'Browser: ', ua),
+									Util.el('div', {}, 'JavaScript Heap (approx): ', mem),
+									Util.el('div', {}, '© 1996–2025 Imaginary Apple-ish Timeline')
+								)
+								if (easter) {
+									box.appendChild(
+										Util.el(
+											'div',
+											{ style: { marginTop: '8px', fontStyle: 'italic' } },
+											'Easter egg: “Dude, you found the Bomb menu.”'
+										)
+									)
+								}
+								win.ct.appendChild(box)
+							},
+						})
+					}
+					return { open }
+				})()
+
+				/* ---------- Bomb (Easter Egg) ---------- */
+				const Bomb = (function () {
+					function trigger() {
+						Alerts.show({
+							title: 'System Error',
+							message:
+								'“The application has unexpectedly quit.”\nID=10 — Click “Restart” to continue.',
+							buttons: [
+								{ label: 'Cancel' },
+								{ label: 'Restart', onClick: () => location.reload() },
+							],
+						})
+					}
+					return { trigger }
+				})()
+
+				/* ---------- Actions (menu/shortcuts) ---------- */
+				const ActionHandlers = {
+					about: () => About.open(false),
+					'control-panel': () => Control.open(),
+					restart: () =>
+						Alerts.confirm(
+							'Are you sure you want to restart?',
+							() => location.reload(),
+							'Restart'
+						),
+					shutdown: () =>
+						Alerts.confirm(
+							'Are you sure you want to shut down?',
+							() => window.close?.(),
+							'Shut Down'
+						),
+					'new-folder': () => {
+						const basePath = '/Desktop'
+						let name = 'New Folder',
+							i = 0
+						const folder = FileSystem.getNode(basePath)
+						while (folder.children[name]) {
+							i++
+							name = 'New Folder ' + i
+						}
+						FileSystem.mkdir(basePath, name)
+						Desktop.populateDesktop()
+						AudioFX.beep(880, 60)
+					},
+					open: () => {
+						// open selected desktop icons
+						const sel = document.querySelectorAll('#desktop .icon.selected')
+						if (sel.length === 0) {
+							Finder.open('/Macintosh HD')
+							return
+						}
+						sel.forEach((el) => {
+							const p = el.dataset.path
+							const node = FileSystem.getNode(p)
+							if (node) Desktop.openIcon(p, node)
+						})
+					},
+					'close-window': () => {
+						if (State.activeWindow) {
+							State.activeWindow.tb.querySelector('.btn.close').click()
+						}
+					},
+					'get-info': () => {
+						const sel = document.querySelector('#desktop .icon.selected')
+						if (sel) {
+							const p = sel.dataset.path
+							const n = FileSystem.getNode(p)
+							Info.show(n, p)
+						} else {
+							if (State.activeWindow) {
+								Info.show(
+									{ name: State.activeWindow.title, type: 'window' },
+									'(window)'
+								)
+							}
+						}
+					},
+					trash: () => {
+						const sel = document.querySelectorAll('#desktop .icon.selected')
+						sel.forEach((el) => {
+							const p = el.dataset.path
+							const n = FileSystem.getNode(p)
+							if (p === '/Desktop/Trash') return
+							FileSystem.remove(p)
+							el.remove()
+						})
+						if (sel.length > 0) AudioFX.beep()
+					},
+					cut: () => document.execCommand?.('cut'),
+					copy: () => document.execCommand?.('copy'),
+					paste: () => document.execCommand?.('paste'),
+					'select-all': () => {
+						document
+							.querySelectorAll('#desktop .icon')
+							.forEach((el) => el.classList.add('selected'))
+					},
+					'view-icons': () => {
+						if (State.activeWindow) {
+							const path =
+								State.activeWindow.ct.querySelector('.finder-path')?.textContent
+							if (path) Finder.open(path) // open new window in icons view via default
+						}
+					},
+					'view-list': () => {
+						if (State.activeWindow) {
+							State.viewMode = 'list'
+							const path =
+								State.activeWindow.ct.querySelector('.finder-path')?.textContent
+							if (path) Finder.open(path)
+						}
+					},
+					'arrange-name': () => Desktop.populateDesktop(),
+					'empty-trash': () =>
+						Alerts.confirm('Empty the Trash?', () =>
+							Alerts.info('The Trash is now empty.')
+						),
+					'toggle-windowshade': () => {
+						State.windowShadeEnabled = !State.windowShadeEnabled
+						Alerts.info(
+							'WindowShade ' +
+								(State.windowShadeEnabled ? 'enabled' : 'disabled') +
+								'.'
+						)
+					},
+					bomb: () => Bomb.trigger(),
+				}
+
+				/* ---------- Apps registry ---------- */
+				const Apps = (function () {
+					const registry = {
+						finder: () => Finder.open('/Macintosh HD'),
+						calculator: () => Calculator.open(),
+						simpletext: () => SimpleText.open(),
+						clock: () => Clock.open(),
+						control: () => Control.open(),
+					}
+					function launch(id) {
+						const fn = registry[id]
+						if (fn) fn()
+						else Alerts.info('Application missing: ' + id)
+					}
+					return { launch }
+				})()
+
+				/* ---------- Keyboard Shortcuts ---------- */
+				document.addEventListener('keydown', (e) => {
+					const meta =
+						e.metaKey || (Util.isMac ? e.ctrlKey && false : e.ctrlKey) // Cmd on Mac, Ctrl elsewhere
+					const key = e.key
+					if (meta) {
+						if (key === 'n' || key === 'N') {
+							ActionHandlers['new-folder']()
+							e.preventDefault()
+						}
+						if (key === 'o' || key === 'O') {
+							ActionHandlers['open']()
+							e.preventDefault()
+						}
+						if (key === 'w' || key === 'W') {
+							ActionHandlers['close-window']()
+							e.preventDefault()
+						}
+						if (key === 'i' || key === 'I') {
+							ActionHandlers['get-info']()
+							e.preventDefault()
+						}
+						if (key === 'a' || key === 'A') {
+							ActionHandlers['select-all']()
+							e.preventDefault()
+						}
+						if (key === '\b') {
+							ActionHandlers['trash']()
+							e.preventDefault()
+						} // Cmd+Backspace
+						if (key === '1') {
+							State.viewMode = 'icons'
+							e.preventDefault()
+						}
+						if (key === '2') {
+							State.viewMode = 'list'
+							e.preventDefault()
+						}
+					}
+				})
+
+				/* ---------- Mouse cursors ---------- */
+				document.addEventListener('mousedown', (e) => {
+					if (e.button === 2) {
+						/* prevent default context menu */ e.preventDefault()
+					}
+				})
+				window.addEventListener('contextmenu', (e) => e.preventDefault())
+
+				/* ---------- Boot sequence ---------- */
+				function boot() {
+					Desktop.populateDesktop()
+					// open Finder at start
+					Finder.open('/Macintosh HD')
+				}
+				document.getElementById('bootBtn').addEventListener('click', () => {
+					document.getElementById('boot').classList.add('hidden')
+					AudioFX.setVolume(State.volume)
+					AudioFX.chime()
+					setTimeout(boot, 400)
+				})
+
+				/* ---------- Apple menu easter: Option-held About ---------- */
+				document.getElementById('apple').addEventListener('click', (e) => {
+					const open = e.shiftKey || e.altKey || e.metaKey
+					const menuItem = e.target.closest('.menu-item')
+					if (menuItem && menuItem.dataset.action === 'about') {
+						About.open(e.altKey)
+					}
+				})
+			})() // IIFE end
+		</script>
+	</body>
+</html>

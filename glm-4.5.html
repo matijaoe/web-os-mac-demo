@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Mac OS System 7.5</title>
+		<style>
+			/* Base Styles and Reset */
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Chicago', 'Geneva', sans-serif;
+				font-size: 12px;
+				overflow: hidden;
+				user-select: none;
+				background-color: #c0c0c0;
+				cursor: default;
+			}
+
+			/* Chicago Font */
+			@font-face {
+				font-family: 'Chicago';
+				src: local('Chicago'), url('data:font/woff2;base64,') format('woff2');
+				font-weight: normal;
+				font-style: normal;
+			}
+
+			/* Desktop */
+			.desktop {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: #c0c0c0;
+				background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23a8a8a8' fill-opacity='0.2'%3E%3Cpath d='M0 0h16v16H0z'/%3E%3C/g%3E%3C/svg%3E");
+				background-size: 16px 16px;
+				z-index: 1;
+			}
+
+			/* Menu Bar */
+			.menu-bar {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 20px;
+				background-color: #c0c0c0;
+				border-bottom: 1px solid #808080;
+				display: flex;
+				z-index: 100;
+			}
+
+			.menu {
+				height: 100%;
+				padding: 0 10px;
+				display: flex;
+				align-items: center;
+				cursor: pointer;
+				position: relative;
+			}
+
+			.menu:hover {
+				background-color: #808080;
+				color: white;
+			}
+
+			.menu-content {
+				position: absolute;
+				top: 20px;
+				left: 0;
+				min-width: 200px;
+				background-color: #c0c0c0;
+				border: 1px solid #000000;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+				display: none;
+				z-index: 101;
+			}
+
+			.menu-item {
+				padding: 3px 20px;
+				cursor: pointer;
+				position: relative;
+			}
+
+			.menu-item:hover {
+				background-color: #000080;
+				color: white;
+			}
+
+			.menu-separator {
+				height: 1px;
+				background-color: #808080;
+				margin: 3px 0;
+			}
+
+			/* Icons */
+			.icon {
+				position: absolute;
+				width: 64px;
+				height: 64px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				cursor: pointer;
+				z-index: 2;
+			}
+
+			.icon-image {
+				width: 32px;
+				height: 32px;
+				margin-bottom: 2px;
+				background-color: #c0c0c0;
+				border: 1px solid #808080;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+
+			.icon-label {
+				text-align: center;
+				max-width: 64px;
+				word-wrap: break-word;
+				background-color: rgba(192, 192, 192, 0.7);
+				padding: 1px;
+			}
+
+			.icon.selected .icon-image {
+				border: 1px dotted #000000;
+			}
+
+			.icon.selected .icon-label {
+				background-color: rgba(0, 0, 128, 0.7);
+				color: white;
+			}
+
+			/* Windows */
+			.window {
+				position: absolute;
+				min-width: 200px;
+				min-height: 150px;
+				background-color: #c0c0c0;
+				border: 1px solid #000000;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+				display: flex;
+				flex-direction: column;
+				z-index: 10;
+			}
+
+			.window.active {
+				z-index: 20;
+			}
+
+			.window-title-bar {
+				height: 20px;
+				background-color: #000080;
+				color: white;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 0 5px;
+				cursor: move;
+				position: relative;
+			}
+
+			.window.active .window-title-bar {
+				background-image: linear-gradient(
+					to bottom,
+					#d8d8d8 0%,
+					#d8d8d8 4px,
+					#000000 4px,
+					#000000 5px,
+					#d8d8d8 5px,
+					#d8d8d8 9px,
+					#000000 9px,
+					#000000 10px,
+					#d8d8d8 10px,
+					#d8d8d8 14px,
+					#000000 14px,
+					#000000 15px,
+					#d8d8d8 15px,
+					#d8d8d8 19px
+				);
+				color: black;
+			}
+
+			.window-title {
+				font-weight: bold;
+				text-align: center;
+				flex-grow: 1;
+			}
+
+			.window-controls {
+				display: flex;
+			}
+
+			.window-control {
+				width: 14px;
+				height: 14px;
+				margin-left: 2px;
+				background-color: #c0c0c0;
+				border: 1px solid #808080;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				cursor: pointer;
+			}
+
+			.window-control:hover {
+				background-color: #e0e0e0;
+			}
+
+			.window-content {
+				flex-grow: 1;
+				padding: 5px;
+				overflow: auto;
+				background-color: #ffffff;
+			}
+
+			.window-resize {
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				width: 15px;
+				height: 15px;
+				cursor: nwse-resize;
+				background-image: linear-gradient(135deg, transparent 50%, #808080 50%);
+				z-index: 11;
+			}
+
+			/* Buttons */
+			.button {
+				background-color: #c0c0c0;
+				border: 1px solid #808080;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+				padding: 3px 10px;
+				cursor: pointer;
+				margin: 2px;
+			}
+
+			.button:hover {
+				background-color: #e0e0e0;
+			}
+
+			.button:active {
+				box-shadow: -1px -1px 0 #ffffff inset, 1px 1px 0 #808080 inset;
+			}
+
+			/* Dialogs */
+			.dialog {
+				position: absolute;
+				background-color: #c0c0c0;
+				border: 2px solid #000000;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+				padding: 15px;
+				z-index: 1000;
+				min-width: 300px;
+			}
+
+			.dialog-title {
+				font-weight: bold;
+				margin-bottom: 10px;
+				text-align: center;
+			}
+
+			.dialog-content {
+				margin-bottom: 15px;
+			}
+
+			.dialog-buttons {
+				display: flex;
+				justify-content: center;
+			}
+
+			/* Calculator */
+			.calculator {
+				width: 200px;
+				height: 250px;
+			}
+
+			.calculator-display {
+				width: 100%;
+				height: 30px;
+				background-color: #ffffff;
+				border: 1px inset #808080;
+				text-align: right;
+				padding: 5px;
+				margin-bottom: 10px;
+				font-size: 14px;
+			}
+
+			.calculator-buttons {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				grid-gap: 5px;
+			}
+
+			.calculator-button {
+				width: 40px;
+				height: 30px;
+			}
+
+			/* SimpleText */
+			.simpletext {
+				width: 400px;
+				height: 300px;
+			}
+
+			.simpletext-content {
+				width: 100%;
+				height: 100%;
+				border: 1px inset #808080;
+				padding: 5px;
+				resize: none;
+				font-family: 'Geneva', sans-serif;
+				font-size: 12px;
+			}
+
+			/* About Dialog */
+			.about-dialog {
+				width: 300px;
+				height: 200px;
+			}
+
+			.about-logo {
+				width: 64px;
+				height: 64px;
+				margin: 0 auto 10px;
+				background-color: #000080;
+				border-radius: 50%;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				color: white;
+				font-size: 24px;
+				font-weight: bold;
+			}
+
+			/* Control Panel */
+			.control-panel {
+				width: 400px;
+				height: 300px;
+			}
+
+			.control-panel-tabs {
+				display: flex;
+				margin-bottom: 10px;
+			}
+
+			.control-panel-tab {
+				padding: 5px 10px;
+				background-color: #c0c0c0;
+				border: 1px solid #808080;
+				border-bottom: none;
+				margin-right: 2px;
+				cursor: pointer;
+			}
+
+			.control-panel-tab.active {
+				background-color: #ffffff;
+				font-weight: bold;
+			}
+
+			.control-panel-content {
+				background-color: #ffffff;
+				border: 1px solid #808080;
+				padding: 10px;
+				height: 200px;
+				overflow: auto;
+			}
+
+			/* Clock */
+			.clock {
+				width: 200px;
+				height: 200px;
+			}
+
+			.clock-display {
+				width: 150px;
+				height: 150px;
+				margin: 0 auto;
+				border: 2px solid #808080;
+				border-radius: 50%;
+				position: relative;
+				background-color: #ffffff;
+			}
+
+			.clock-hand {
+				position: absolute;
+				background-color: #000000;
+				transform-origin: bottom center;
+				bottom: 50%;
+				left: 50%;
+			}
+
+			.clock-hour {
+				width: 4px;
+				height: 40px;
+				margin-left: -2px;
+			}
+
+			.clock-minute {
+				width: 2px;
+				height: 60px;
+				margin-left: -1px;
+			}
+
+			.clock-second {
+				width: 1px;
+				height: 70px;
+				margin-left: -0.5px;
+				background-color: #ff0000;
+			}
+
+			.clock-center {
+				position: absolute;
+				width: 8px;
+				height: 8px;
+				background-color: #000000;
+				border-radius: 50%;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+			}
+
+			.clock-digital {
+				text-align: center;
+				margin-top: 10px;
+				font-size: 16px;
+			}
+
+			/* Finder */
+			.finder {
+				width: 500px;
+				height: 400px;
+			}
+
+			.finder-toolbar {
+				display: flex;
+				margin-bottom: 10px;
+			}
+
+			.finder-view-buttons {
+				display: flex;
+			}
+
+			.finder-view-button {
+				width: 24px;
+				height: 24px;
+				margin-right: 2px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+
+			.finder-content {
+				display: flex;
+				height: 100%;
+			}
+
+			.finder-sidebar {
+				width: 150px;
+				border-right: 1px solid #808080;
+				padding-right: 10px;
+				overflow: auto;
+			}
+
+			.finder-main {
+				flex-grow: 1;
+				overflow: auto;
+			}
+
+			.finder-item {
+				display: flex;
+				align-items: center;
+				padding: 3px;
+				cursor: pointer;
+			}
+
+			.finder-item:hover {
+				background-color: #000080;
+				color: white;
+			}
+
+			.finder-item-icon {
+				width: 16px;
+				height: 16px;
+				margin-right: 5px;
+				background-color: #c0c0c0;
+				border: 1px solid #808080;
+			}
+
+			/* Scrollbar */
+			::-webkit-scrollbar {
+				width: 16px;
+				height: 16px;
+			}
+
+			::-webkit-scrollbar-track {
+				background-color: #c0c0c0;
+				border: 1px solid #808080;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+			}
+
+			::-webkit-scrollbar-thumb {
+				background-color: #c0c0c0;
+				border: 1px solid #808080;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+			}
+
+			::-webkit-scrollbar-thumb:vertical {
+				background-image: linear-gradient(
+							transparent 12.5%,
+							#353594 0,
+							#353594 25%,
+							transparent 0,
+							transparent 37.5%,
+							#353594 0,
+							#353594 50%,
+							transparent 0,
+							transparent 62.5%,
+							#353594 0,
+							#353594 75%,
+							transparent 0,
+							transparent 87.5%,
+							#353594 0
+						)
+						50%/7px 8px no-repeat,
+					linear-gradient(
+							#cdcdfc 12.5%,
+							transparent 0,
+							transparent 25%,
+							#cdcdfc 0,
+							#cdcdfc 37.5%,
+							transparent 0,
+							transparent 50%,
+							#cdcdfc 0,
+							#cdcdfc 62.5%,
+							transparent 0,
+							transparent 75%,
+							#cdcdfc 0,
+							#cdcdfc 87.5%,
+							transparent 0
+						)
+						49%/7px 8px no-repeat,
+					#9b9bf9;
+			}
+
+			/* Context Menu */
+			.context-menu {
+				position: absolute;
+				background-color: #c0c0c0;
+				border: 1px solid #000000;
+				box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+				display: none;
+				z-index: 1000;
+			}
+
+			/* Loading Screen */
+			.loading-screen {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: #c0c0c0;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				z-index: 10000;
+			}
+
+			.loading-logo {
+				width: 64px;
+				height: 64px;
+				background-color: #000080;
+				border-radius: 50%;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				color: white;
+				font-size: 24px;
+				font-weight: bold;
+				margin-bottom: 20px;
+			}
+
+			.loading-text {
+				font-size: 14px;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Loading Screen -->
+		<div
+			class="loading-screen"
+			id="loadingScreen"
+		>
+			<div class="loading-logo"></div>
+			<div class="loading-text">Starting up Mac OS System 7.5...</div>
+		</div>
+
+		<!-- Desktop -->
+		<div
+			class="desktop"
+			id="desktop"
+		>
+			<!-- Menu Bar -->
+			<div
+				class="menu-bar"
+				id="menuBar"
+			>
+				<div
+					class="menu"
+					id="appleMenu"
+				>
+					<span></span>
+					<div
+						class="menu-content"
+						id="appleMenuContent"
+					>
+						<div
+							class="menu-item"
+							id="aboutItem"
+						>
+							About This Macintosh
+						</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Calculator</div>
+						<div class="menu-item">SimpleText</div>
+						<div class="menu-item">Control Panel</div>
+						<div class="menu-item">Clock</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Finder</div>
+					</div>
+				</div>
+				<div
+					class="menu"
+					id="fileMenu"
+				>
+					<span>File</span>
+					<div
+						class="menu-content"
+						id="fileMenuContent"
+					>
+						<div class="menu-item">New Folder</div>
+						<div class="menu-item">Open</div>
+						<div class="menu-item">Close</div>
+						<div class="menu-item">Get Info</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Duplicate</div>
+						<div class="menu-item">Make Alias</div>
+						<div class="menu-item">Put Away</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Empty Trash</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Shut Down</div>
+					</div>
+				</div>
+				<div
+					class="menu"
+					id="editMenu"
+				>
+					<span>Edit</span>
+					<div
+						class="menu-content"
+						id="editMenuContent"
+					>
+						<div class="menu-item">Undo</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Cut</div>
+						<div class="menu-item">Copy</div>
+						<div class="menu-item">Paste</div>
+						<div class="menu-item">Clear</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Select All</div>
+					</div>
+				</div>
+				<div
+					class="menu"
+					id="viewMenu"
+				>
+					<span>View</span>
+					<div
+						class="menu-content"
+						id="viewMenuContent"
+					>
+						<div class="menu-item">by Icon</div>
+						<div class="menu-item">by Name</div>
+						<div class="menu-item">by Date</div>
+						<div class="menu-item">by Size</div>
+						<div class="menu-item">by Kind</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">as Icons</div>
+						<div class="menu-item">as List</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Clean Up</div>
+					</div>
+				</div>
+				<div
+					class="menu"
+					id="specialMenu"
+				>
+					<span>Special</span>
+					<div
+						class="menu-content"
+						id="specialMenuContent"
+					>
+						<div class="menu-item">Restart</div>
+						<div class="menu-item">Sleep</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Empty Trash...</div>
+						<div class="menu-item">Erase Disk...</div>
+						<div class="menu-separator"></div>
+						<div class="menu-item">Set Startup...</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Desktop Icons -->
+			<div
+				class="icon"
+				id="macHDIcon"
+				style="top: 50px; left: 50px"
+			>
+				<div class="icon-image">💾</div>
+				<div class="icon-label">Macintosh HD</div>
+			</div>
+			<div
+				class="icon"
+				id="trashIcon"
+				style="bottom: 50px; right: 50px"
+			>
+				<div class="icon-image">🗑️</div>
+				<div class="icon-label">Trash</div>
+			</div>
+			<div
+				class="icon"
+				id="finderIcon"
+				style="top: 50px; left: 150px"
+			>
+				<div class="icon-image">👁️</div>
+				<div class="icon-label">Finder</div>
+			</div>
+			<div
+				class="icon"
+				id="calculatorIcon"
+				style="top: 150px; left: 50px"
+			>
+				<div class="icon-image">🧮</div>
+				<div class="icon-label">Calculator</div>
+			</div>
+			<div
+				class="icon"
+				id="simpleTextIcon"
+				style="top: 150px; left: 150px"
+			>
+				<div class="icon-image">📝</div>
+				<div class="icon-label">SimpleText</div>
+			</div>
+			<div
+				class="icon"
+				id="controlPanelIcon"
+				style="top: 250px; left: 50px"
+			>
+				<div class="icon-image">⚙️</div>
+				<div class="icon-label">Control Panel</div>
+			</div>
+			<div
+				class="icon"
+				id="clockIcon"
+				style="top: 250px; left: 150px"
+			>
+				<div class="icon-image">🕒</div>
+				<div class="icon-label">Clock</div>
+			</div>
+		</div>
+
+		<!-- Context Menu -->
+		<div
+			class="context-menu"
+			id="contextMenu"
+		>
+			<div class="menu-item">Open</div>
+			<div class="menu-item">Get Info</div>
+			<div class="menu-item">Duplicate</div>
+			<div class="menu-item">Make Alias</div>
+			<div class="menu-item">Put Away</div>
+			<div class="menu-separator"></div>
+			<div class="menu-item">Move to Trash</div>
+		</div>
+
+		<script>
+			// Global variables
+			let windows = []
+			let activeWindow = null
+			let selectedIcon = null
+			let isDragging = false
+			let isResizing = false
+			let dragOffset = { x: 0, y: 0 }
+			let windowIdCounter = 0
+			let iconIdCounter = 0
+
+			// Sound effects (simulated)
+			const sounds = {
+				startup: () => {
+					// Simulate startup sound
+					const audioContext = new (window.AudioContext ||
+						window.webkitAudioContext)()
+					const oscillator = audioContext.createOscillator()
+					const gainNode = audioContext.createGain()
+
+					oscillator.connect(gainNode)
+					gainNode.connect(audioContext.destination)
+
+					oscillator.type = 'sine'
+					oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
+					oscillator.frequency.exponentialRampToValueAtTime(
+						880,
+						audioContext.currentTime + 0.5
+					)
+
+					gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+					gainNode.gain.exponentialRampToValueAtTime(
+						0.01,
+						audioContext.currentTime + 0.5
+					)
+
+					oscillator.start(audioContext.currentTime)
+					oscillator.stop(audioContext.currentTime + 0.5)
+				},
+				click: () => {
+					// Simulate click sound
+					const audioContext = new (window.AudioContext ||
+						window.webkitAudioContext)()
+					const oscillator = audioContext.createOscillator()
+					const gainNode = audioContext.createGain()
+
+					oscillator.connect(gainNode)
+					gainNode.connect(audioContext.destination)
+
+					oscillator.type = 'square'
+					oscillator.frequency.setValueAtTime(1000, audioContext.currentTime)
+
+					gainNode.gain.setValueAtTime(0.1, audioContext.currentTime)
+					gainNode.gain.exponentialRampToValueAtTime(
+						0.01,
+						audioContext.currentTime + 0.05
+					)
+
+					oscillator.start(audioContext.currentTime)
+					oscillator.stop(audioContext.currentTime + 0.05)
+				},
+				error: () => {
+					// Simulate error sound
+					const audioContext = new (window.AudioContext ||
+						window.webkitAudioContext)()
+					const oscillator = audioContext.createOscillator()
+					const gainNode = audioContext.createGain()
+
+					oscillator.connect(gainNode)
+					gainNode.connect(audioContext.destination)
+
+					oscillator.type = 'sawtooth'
+					oscillator.frequency.setValueAtTime(200, audioContext.currentTime)
+
+					gainNode.gain.setValueAtTime(0.2, audioContext.currentTime)
+					gainNode.gain.exponentialRampToValueAtTime(
+						0.01,
+						audioContext.currentTime + 0.2
+					)
+
+					oscillator.start(audioContext.currentTime)
+					oscillator.stop(audioContext.currentTime + 0.2)
+				},
+			}
+
+			// Initialize the system
+			function init() {
+				// Hide loading screen after delay delay
+				setTimeout(() => {
+					document.getElementById('loadingScreen').style.display = 'none'
+					sounds.startup()
+				}, 2000)
+
+				// Setup menu bar
+				setupMenuBar()
+
+				// Setup desktop icons
+				setupDesktopIcons()
+
+				// Setup context menu
+				setupContextMenu()
+
+				// Setup keyboard shortcuts
+				setupKeyboardShortcuts()
+
+				// Setup clock update
+				updateClock()
+				setInterval(updateClock, 1000)
+
+				// Load saved state
+				loadState()
+
+				// Save state periodically
+				setInterval(saveState, 5000)
+			}
+
+			// Setup menu bar
+			function setupMenuBar() {
+				const menus = document.querySelectorAll('.menu')
+
+				menus.forEach((menu) => {
+					menu.addEventListener('click', (e) => {
+						e.stopPropagation()
+						sounds.click()
+
+						// Close all other menus
+						document.querySelectorAll('.menu-content').forEach((content) => {
+							if (content !== menu.querySelector('.menu-content')) {
+								content.style.display = 'none'
+							}
+						})
+
+						// Toggle current menu
+						const menuContent = menu.querySelector('.menu-content')
+						menuContent.style.display =
+							menuContent.style.display === 'block' ? 'none' : 'block'
+					})
+
+					// Setup menu items
+					const menuItems = menu.querySelectorAll('.menu-item')
+					menuItems.forEach((item) => {
+						item.addEventListener('click', (e) => {
+							e.stopPropagation()
+							sounds.click()
+
+							// Handle menu item actions
+							handleMenuItemClick(menu.id, item.id, item.textContent)
+
+							// Close menu
+							menu.querySelector('.menu-content').style.display = 'none'
+						})
+					})
+				})
+
+				// Close menus when clicking elsewhere
+				document.addEventListener('click', () => {
+					document.querySelectorAll('.menu-content').forEach((content) => {
+						content.style.display = 'none'
+					})
+				})
+			}
+
+			// Handle menu item clicks
+			function handleMenuItemClick(menuId, itemId, itemText) {
+				switch (itemText) {
+					case 'About This Macintosh':
+						openAboutDialog()
+						break
+					case 'Calculator':
+						openCalculator()
+						break
+					case 'SimpleText':
+						openSimpleText()
+						break
+					case 'Control Panel':
+						openControlPanel()
+						break
+					case 'Clock':
+						openClock()
+						break
+					case 'Finder':
+						openFinder()
+						break
+					case 'Shut Down':
+						shutDown()
+						break
+					case 'Restart':
+						restart()
+						break
+					case 'Sleep':
+						sleep()
+						break
+					case 'Empty Trash':
+						emptyTrash()
+						break
+				}
+			}
+
+			// Setup desktop icons
+			function setupDesktopIcons() {
+				const icons = document.querySelectorAll('.icon')
+
+				icons.forEach((icon) => {
+					// Icon selection
+					icon.addEventListener('click', (e) => {
+						e.stopPropagation()
+						sounds.click()
+
+						// Deselect all other icons
+						document.querySelectorAll('.icon').forEach((i) => {
+							if (i !== icon) {
+								i.classList.remove('selected')
+							}
+						})
+
+						// Toggle selection
+						icon.classList.toggle('selected')
+						selectedIcon = icon.classList.contains('selected') ? icon : null
+					})
+
+					// Icon double-click
+					icon.addEventListener('dblclick', (e) => {
+						e.stopPropagation()
+						sounds.click()
+
+						// Handle icon double-click
+						handleIconDoubleClick(icon.id)
+					})
+
+					// Icon drag
+					icon.addEventListener('mousedown', (e) => {
+						if (e.button === 0) {
+							// Left mouse button
+							isDragging = true
+							dragOffset.x = e.clientX - icon.offsetLeft
+							dragOffset.y = e.clientY - icon.offsetTop
+
+							// Bring to front
+							icon.style.zIndex = ++iconIdCounter
+
+							// Select icon
+							document.querySelectorAll('.icon').forEach((i) => {
+								if (i !== icon) {
+									i.classList.remove('selected')
+								}
+							})
+							icon.classList.add('selected')
+							selectedIcon = icon
+						}
+					})
+				})
+
+				// Global mouse events for dragging
+				document.addEventListener('mousemove', (e) => {
+					if (isDragging && selectedIcon) {
+						// Snap to grid (64px grid)
+						const x = Math.round((e.clientX - dragOffset.x) / 64) * 64
+						const y = Math.round((e.clientY - dragOffset.y) / 64) * 64
+
+						// Keep within desktop bounds
+						const desktopRect = document
+							.getElementById('desktop')
+							.getBoundingClientRect()
+						const maxX = desktopRect.width - 64
+						const maxY = desktopRect.height - 64
+
+						selectedIcon.style.left = Math.max(0, Math.min(x, maxX)) + 'px'
+						selectedIcon.style.top = Math.max(0, Math.min(y, maxY)) + 'px'
+					}
+				})
+
+				document.addEventListener('mouseup', () => {
+					isDragging = false
+				})
+			}
+
+			// Handle icon double-click
+			function handleIconDoubleClick(iconId) {
+				switch (iconId) {
+					case 'macHDIcon':
+						openFinder()
+						break
+					case 'trashIcon':
+						emptyTrash()
+						break
+					case 'finderIcon':
+						openFinder()
+						break
+					case 'calculatorIcon':
+						openCalculator()
+						break
+					case 'simpleTextIcon':
+						openSimpleText()
+						break
+					case 'controlPanelIcon':
+						openControlPanel()
+						break
+					case 'clockIcon':
+						openClock()
+						break
+				}
+			}
+
+			// Setup context menu
+			function setupContextMenu() {
+				const contextMenu = document.getElementById('contextMenu')
+
+				// Desktop context menu
+				document
+					.getElementById('desktop')
+					.addEventListener('contextmenu', (e) => {
+						e.preventDefault()
+
+						// Position context menu
+						contextMenu.style.left = e.clientX + 'px'
+						contextMenu.style.top = e.clientY + 'px'
+						contextMenu.style.display = 'block'
+					})
+
+				// Icon context menu
+				document.querySelectorAll('.icon').forEach((icon) => {
+					icon.addEventListener('contextmenu', (e) => {
+						e.preventDefault()
+
+						// Select icon
+						document.querySelectorAll('.icon').forEach((i) => {
+							if (i !== icon) {
+								i.classList.remove('selected')
+							}
+						})
+						icon.classList.add('selected')
+						selectedIcon = icon
+
+						// Position context menu
+						contextMenu.style.left = e.clientX + 'px'
+						contextMenu.style.top = e.clientY + 'px'
+						contextMenu.style.display = 'block'
+					})
+				})
+
+				// Close context menu when clicking elsewhere
+				document.addEventListener('click', () => {
+					contextMenu.style.display = 'none'
+				})
+
+				// Context menu items
+				const contextMenuItems = contextMenu.querySelectorAll('.menu-item')
+				contextMenuItems.forEach((item) => {
+					item.addEventListener('click', (e) => {
+						e.stopPropagation()
+						sounds.click()
+
+						// Handle context menu item
+						handleContextMenuItem(item.textContent)
+
+						// Close context menu
+						contextMenu.style.display = 'none'
+					})
+				})
+			}
+
+			// Handle context menu item clicks
+			function handleContextMenuItem(itemText) {
+				if (!selectedIcon) return
+
+				switch (itemText) {
+					case 'Open':
+						handleIconDoubleClick(selectedIcon.id)
+						break
+					case 'Get Info':
+						showInfoDialog(
+							selectedIcon.querySelector('.icon-label').textContent
+						)
+						break
+					case 'Move to Trash':
+						// Move icon to trash position
+						const trashIcon = document.getElementById('trashIcon')
+						selectedIcon.style.left = trashIcon.style.left
+						selectedIcon.style.top = trashIcon.style.top
+						break
+				}
+			}
+
+			// Setup keyboard shortcuts
+			function setupKeyboardShortcuts() {
+				document.addEventListener('keydown', (e) => {
+					// Command key (Ctrl on Windows/Linux)
+					const isCommand = e.ctrlKey || e.metaKey
+
+					if (isCommand) {
+						switch (e.key) {
+							case 'w':
+								// Close active window
+								if (activeWindow) {
+									closeWindow(activeWindow)
+								}
+								break
+							case 'n':
+								// New folder
+								newFolder()
+								break
+							case 'o':
+								// Open selected icon
+								if (selectedIcon) {
+									handleIconDoubleClick(selectedIcon.id)
+								}
+								break
+							case 'a':
+								// Select all icons
+								document.querySelectorAll('.icon').forEach((icon) => {
+									icon.classList.add('selected')
+								})
+								break
+							case 'q':
+								// Quit (shut down)
+								shutDown()
+								break
+						}
+					}
+
+					// Escape key
+					if (e.key === 'Escape') {
+						// Close menus
+						document.querySelectorAll('.menu-content').forEach((content) => {
+							content.style.display = 'none'
+						})
+
+						// Close context menu
+						document.getElementById('contextMenu').style.display = 'none'
+					}
+				})
+			}
+
+			// Window management
+			function createWindow(title, content, width, height, x, y) {
+				const windowId = `window-${windowIdCounter++}`
+				const windowElement = document.createElement('div')
+				windowElement.className = 'window'
+				windowElement.id = windowId
+				windowElement.style.width = width + 'px'
+				windowElement.style.height = height + 'px'
+				windowElement.style.left = x + 'px'
+				windowElement.style.top = y + 'px'
+
+				// Create title bar
+				const titleBar = document.createElement('div')
+				titleBar.className = 'window-title-bar'
+
+				const titleText = document.createElement('div')
+				titleText.className = 'window-title'
+				titleText.textContent = title
+
+				const controls = document.createElement('div')
+				controls.className = 'window-controls'
+
+				const closeButton = document.createElement('div')
+				closeButton.className = 'window-control'
+				closeButton.innerHTML = '×'
+				closeButton.addEventListener('click', () => {
+					sounds.click()
+					closeWindow(windowElement)
+				})
+
+				controls.appendChild(closeButton)
+				titleBar.appendChild(titleText)
+				titleBar.appendChild(controls)
+
+				// Create content area
+				const contentArea = document.createElement('div')
+				contentArea.className = 'window-content'
+				contentArea.innerHTML = content
+
+				// Create resize handle
+				const resizeHandle = document.createElement('div')
+				resizeHandle.className = 'window-resize'
+
+				// Assemble window
+				windowElement.appendChild(titleBar)
+				windowElement.appendChild(contentArea)
+				windowElement.appendChild(resizeHandle)
+
+				// Add to desktop
+				document.getElementById('desktop').appendChild(windowElement)
+
+				// Add to windows array
+				windows.push({
+					id: windowId,
+					element: windowElement,
+					title: title,
+				})
+
+				// Setup window dragging
+				setupWindowDragging(windowElement, titleBar)
+
+				// Setup window resizing
+				setupWindowResizing(windowElement, resizeHandle)
+
+				// Setup window activation
+				windowElement.addEventListener('mousedown', () => {
+					activateWindow(windowElement)
+				})
+
+				// Activate window
+				activateWindow(windowElement)
+
+				return windowElement
+			}
+
+			// Setup window dragging
+			function setupWindowDragging(windowElement, titleBar) {
+				titleBar.addEventListener('mousedown', (e) => {
+					if (e.button === 0) {
+						// Left mouse button
+						isDragging = true
+						dragOffset.x = e.clientX - windowElement.offsetLeft
+						dragOffset.y = e.clientY - windowElement.offsetTop
+
+						// Activate window
+						activateWindow(windowElement)
+					}
+				})
+			}
+
+			// Setup window resizing
+			function setupWindowResizing(windowElement, resizeHandle) {
+				resizeHandle.addEventListener('mousedown', (e) => {
+					if (e.button === 0) {
+						// Left mouse button
+						isResizing = true
+						dragOffset.x = e.clientX - windowElement.offsetWidth
+						dragOffset.y = e.clientY - windowElement.offsetHeight
+
+						// Activate window
+						activateWindow(windowElement)
+					}
+				})
+			}
+
+			// Activate window
+			function activateWindow(windowElement) {
+				// Deactivate all windows
+				document.querySelectorAll('.window').forEach((w) => {
+					w.classList.remove('active')
+				})
+
+				// Activate this window
+				windowElement.classList.add('active')
+				activeWindow = windowElement
+
+				// Bring to front
+				windowElement.style.zIndex = ++windowIdCounter
+			}
+
+			// Close window
+			function closeWindow(windowElement) {
+				// Remove from DOM
+				windowElement.remove()
+
+				// Remove from windows array
+				windows = windows.filter((w) => w.element !== windowElement)
+
+				// Set new active window
+				if (activeWindow === windowElement && windows.length > 0) {
+					activeWindow = windows[windows.length - 1].element
+					activateWindow(activeWindow)
+				} else if (windows.length === 0) {
+					activeWindow = null
+				}
+			}
+
+			// Global mouse events for window dragging/resizing
+			document.addEventListener('mousemove', (e) => {
+				if (isDragging && activeWindow) {
+					// Calculate new position
+					const x = e.clientX - dragOffset.x
+					const y = e.clientY - dragOffset.y
+
+					// Keep within desktop bounds
+					const desktopRect = document
+						.getElementById('desktop')
+						.getBoundingClientRect()
+					const maxX = desktopRect.width - activeWindow.offsetWidth
+					const maxY = desktopRect.height - activeWindow.offsetHeight - 20 // Account for menu bar
+
+					activeWindow.style.left = Math.max(0, Math.min(x, maxX)) + 'px'
+					activeWindow.style.top = Math.max(20, Math.min(y, maxY)) + 'px' // Account for menu bar
+				}
+
+				if (isResizing && activeWindow) {
+					// Calculate new size
+					const width = e.clientX - dragOffset.x
+					const height = e.clientY - dragOffset.y
+
+					// Minimum size
+					const minWidth = 200
+					const minHeight = 150
+
+					activeWindow.style.width = Math.max(minWidth, width) + 'px'
+					activeWindow.style.height = Math.max(minHeight, height) + 'px'
+				}
+			})
+
+			document.addEventListener('mouseup', () => {
+				isDragging = false
+				isResizing = false
+			})
+
+			// Applications
+
+			// About dialog
+			function openAboutDialog() {
+				const content = `
+                <div class="about-dialog">
+                    <div class="about-logo"></div>
+                    <div class="dialog-title">Macintosh System Software</div>
+                    <div class="dialog-content">
+                        <p>Version 7.5</p>
+                        <p>Copyright © 1983-1996</p>
+                        <p>Apple Computer, Inc.</p>
+                        <p>All rights reserved.</p>
+                    </div>
+                    <div class="dialog-buttons">
+                        <button class="button" onclick="closeDialog(this)">OK</button>
+                    </div>
+                </div>
+            `
+
+				const dialog = document.createElement('div')
+				dialog.className = 'dialog'
+				dialog.innerHTML = content
+				dialog.style.left = '50%'
+				dialog.style.top = '50%'
+				dialog.style.transform = 'translate(-50%, -50%)'
+
+				document.getElementById('desktop').appendChild(dialog)
+			}
+
+			// Calculator
+			function openCalculator() {
+				const content = `
+                <div class="calculator">
+                    <div class="calculator-display" id="calcDisplay">0</div>
+                    <div class="calculator-buttons">
+                        <button class="button calculator-button" onclick="clearCalculator()">C</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('/')" disabled>÷</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('*')" disabled>×</button>
+                        <button class="button calculator-button" onclick="deleteLastCalculator()">←</button>
+                        
+                        <button class="button calculator-button" onclick="appendToCalculator('7')">7</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('8')">8</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('9')">9</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('-')">-</button>
+                        
+                        <button class="button calculator-button" onclick="appendToCalculator('4')">4</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('5')">5</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('6')">6</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('+')">+</button>
+                        
+                        <button class="button calculator-button" onclick="appendToCalculator('1')">1</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('2')">2</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('3')">3</button>
+                        <button class="button calculator-button" onclick="calculateResult()" style="height: 64px;">=</button>
+                        
+                        <button class="button calculator-button" onclick="appendToCalculator('0')" style="width: 86px;">0</button>
+                        <button class="button calculator-button" onclick="appendToCalculator('.')">.</button>
+                    </div>
+                </div>
+            `
+
+				createWindow('Calculator', content, 200, 250, 100, 100)
+			}
+
+			// Calculator functions
+			let calcDisplay = '0'
+			let calcOperand1 = null
+			let calcOperand2 = null
+			let calcOperator = null
+			let calcWaitingForOperand = false
+
+			function updateCalculatorDisplay() {
+				document.getElementById('calcDisplay').textContent = calcDisplay
+			}
+
+			function appendToCalculator(digit) {
+				if (calcWaitingForOperand) {
+					calcDisplay = digit
+					calcWaitingForOperand = false
+				} else {
+					calcDisplay = calcDisplay === '0' ? digit : calcDisplay + digit
+				}
+				updateCalculatorDisplay()
+			}
+
+			function clearCalculator() {
+				calcDisplay = '0'
+				calcOperand1 = null
+				calcOperand2 = null
+				calcOperator = null
+				calcWaitingForOperand = false
+				updateCalculatorDisplay()
+			}
+
+			function deleteLastCalculator() {
+				if (calcDisplay.length > 1) {
+					calcDisplay = calcDisplay.slice(0, -1)
+				} else {
+					calcDisplay = '0'
+				}
+				updateCalculatorDisplay()
+			}
+
+			function calculateResult() {
+				const inputValue = parseFloat(calcDisplay)
+
+				if (calcOperand1 === null) {
+					calcOperand1 = inputValue
+				} else if (calcOperator) {
+					const currentValue = calcOperand1 || 0
+					let newValue = 0
+
+					switch (calcOperator) {
+						case '+':
+							newValue = currentValue + inputValue
+							break
+						case '-':
+							newValue = currentValue - inputValue
+							break
+						case '*':
+							newValue = currentValue * inputValue
+							break
+						case '/':
+							newValue = currentValue / inputValue
+							break
+					}
+
+					calcDisplay = String(newValue)
+					calcOperand1 = newValue
+				}
+
+				calcWaitingForOperand = true
+				updateCalculatorDisplay()
+			}
+
+			// SimpleText
+			function openSimpleText() {
+				const content = `
+                <div class="simpletext">
+                    <textarea class="simpletext-content" placeholder="Start typing here..."></textarea>
+                </div>
+            `
+
+				createWindow('SimpleText', content, 400, 300, 150, 150)
+			}
+
+			// Control Panel
+			function openControlPanel() {
+				const content = `
+                <div class="control-panel">
+                    <div class="control-panel-tabs">
+                        <div class="control-panel-tab active">General</div>
+                        <div class="control-panel-tab">Desktop</div>
+                        <div class="control-panel-tab">Sound</div>
+                    </div>
+                    <div class="control-panel-content">
+                        <h3>General Controls</h3>
+                        <p>Adjust the general settings of your Macintosh.</p>
+                        <div style="margin-top: 20px;">
+                            <label>
+                                <input type="checkbox" checked> Show desktop pattern
+                            </label>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label>
+                                <input type="checkbox" checked> Enable sound effects
+                            </label>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label>
+                                Date format:
+                                <select style="margin-left: 10px;">
+                                    <option>MM/DD/YYYY</option>
+                                    <option>DD/MM/YYYY</option>
+                                    <option>YYYY-MM-DD</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `
+
+				createWindow('Control Panel', content, 400, 300, 200, 200)
+			}
+
+			// Clock
+			function openClock() {
+				const content = `
+                <div class="clock">
+                    <div class="clock-display">
+                        <div class="clock-hand clock-hour" id="clockHour"></div>
+                        <div class="clock-hand clock-minute" id="clockMinute"></div>
+                        <div class="clock-hand clock-second" id="clockSecond"></div>
+                        <div class="clock-center"></div>
+                    </div>
+                    <div class="clock-digital" id="clockDigital">12:00:00</div>
+                </div>
+            `
+
+				createWindow('Clock', content, 200, 250, 250, 250)
+
+				// Update clock hands
+				updateClockHands()
+			}
+
+			// Update clock
+			function updateClock() {
+				const now = new Date()
+				const hours = now.getHours()
+				const minutes = now.getMinutes()
+				const seconds = now.getSeconds()
+
+				// Update digital clock in menu bar if it exists
+				const menuBar = document.getElementById('menuBar')
+				let clockElement = document.getElementById('menuBarClock')
+
+				if (!clockElement) {
+					clockElement = document.createElement('div')
+					clockElement.id = 'menuBarClock'
+					clockElement.style.position = 'absolute'
+					clockElement.style.right = '10px'
+					clockElement.style.top = '0'
+					clockElement.style.height = '100%'
+					clockElement.style.display = 'flex'
+					clockElement.style.alignItems = 'center'
+					menuBar.appendChild(clockElement)
+				}
+
+				const timeString = `${hours.toString().padStart(2, '0')}:${minutes
+					.toString()
+					.padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+				clockElement.textContent = timeString
+			}
+
+			// Update clock hands
+			function updateClockHands() {
+				const now = new Date()
+				const hours = now.getHours() % 12
+				const minutes = now.getMinutes()
+				const seconds = now.getSeconds()
+
+				const hourElement = document.getElementById('clockHour')
+				const minuteElement = document.getElementById('clockMinute')
+				const secondElement = document.getElementById('clockSecond')
+				const digitalElement = document.getElementById('clockDigital')
+
+				if (hourElement) {
+					const hourDegrees = hours * 30 + minutes * 0.5
+					hourElement.style.transform = `rotate(${hourDegrees}deg)`
+				}
+
+				if (minuteElement) {
+					const minuteDegrees = minutes * 6
+					minuteElement.style.transform = `rotate(${minuteDegrees}deg)`
+				}
+
+				if (secondElement) {
+					const secondDegrees = seconds * 6
+					secondElement.style.transform = `rotate(${secondDegrees}deg)`
+				}
+
+				if (digitalElement) {
+					const timeString = `${hours.toString().padStart(2, '0')}:${minutes
+						.toString()
+						.padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+					digitalElement.textContent = timeString
+				}
+
+				// Update every second
+				setTimeout(updateClockHands, 1000)
+			}
+
+			// Finder
+			function openFinder() {
+				const content = `
+                <div class="finder">
+                    <div class="finder-toolbar">
+                        <div class="finder-view-buttons">
+                            <button class="button finder-view-button" title="Icon View">☰</button>
+                            <button class="button finder-view-button" title="List View">☷</button>
+                        </div>
+                    </div>
+                    <div class="finder-content">
+                        <div class="finder-sidebar">
+                            <div class="finder-item">
+                                <div class="finder-item-icon">💾</div>
+                                <div>Macintosh HD</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">🖴</div>
+                                <div>Desktop</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">📁</div>
+                                <div>Applications</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">📁</div>
+                                <div>Documents</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">🗑️</div>
+                                <div>Trash</div>
+                            </div>
+                        </div>
+                        <div class="finder-main">
+                            <div class="finder-item">
+                                <div class="finder-item-icon">📁</div>
+                                <div>System Folder</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">📁</div>
+                                <div>Applications</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">📝</div>
+                                <div>Read Me</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">🧮</div>
+                                <div>Calculator</div>
+                            </div>
+                            <div class="finder-item">
+                                <div class="finder-item-icon">📝</div>
+                                <div>SimpleText</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+
+				createWindow('Finder', content, 500, 400, 50, 50)
+			}
+
+			// System functions
+			function shutDown() {
+				if (confirm('Are you sure you want to shut down your Macintosh?')) {
+					sounds.click()
+
+					// Show shutting down screen
+					const shutdownScreen = document.createElement('div')
+					shutdownScreen.className = 'loading-screen'
+					shutdownScreen.innerHTML = `
+                    <div class="loading-logo"></div>
+                    <div class="loading-text">Shutting down...</div>
+                `
+					document.body.appendChild(shutdownScreen)
+
+					// Simulate shutdown
+					setTimeout(() => {
+						// Clear all windows
+						document.querySelectorAll('.window').forEach((window) => {
+							window.remove()
+						})
+						windows = []
+						activeWindow = null
+
+						// Hide shutdown screen
+						shutdownScreen.remove()
+
+						// Show startup screen again
+						document.getElementById('loadingScreen').style.display = 'flex'
+
+						// Restart after a delay
+						setTimeout(() => {
+							document.getElementById('loadingScreen').style.display = 'none'
+						}, 2000)
+					}, 2000)
+				}
+			}
+
+			function restart() {
+				if (confirm('Are you sure you want to restart your Macintosh?')) {
+					sounds.click()
+
+					// Show restarting screen
+					const restartScreen = document.createElement('div')
+					restartScreen.className = 'loading-screen'
+					restartScreen.innerHTML = `
+                    <div class="loading-logo"></div>
+                    <div class="loading-text">Restarting...</div>
+                `
+					document.body.appendChild(restartScreen)
+
+					// Simulate restart
+					setTimeout(() => {
+						// Clear all windows
+						document.querySelectorAll('.window').forEach((window) => {
+							window.remove()
+						})
+						windows = []
+						activeWindow = null
+
+						// Hide restart screen
+						restartScreen.remove()
+
+						// Show startup screen again
+						document.getElementById('loadingScreen').style.display = 'flex'
+
+						// Restart after a delay
+						setTimeout(() => {
+							document.getElementById('loadingScreen').style.display = 'none'
+							sounds.startup()
+						}, 2000)
+					}, 2000)
+				}
+			}
+
+			function sleep() {
+				sounds.click()
+
+				// Show sleeping screen
+				const sleepScreen = document.createElement('div')
+				sleepScreen.className = 'loading-screen'
+				sleepScreen.innerHTML = `
+                <div class="loading-logo"></div>
+                <div class="loading-text">Sleeping...</div>
+            `
+				document.body.appendChild(sleepScreen)
+
+				// Simulate sleep
+				setTimeout(() => {
+					sleepScreen.remove()
+				}, 2000)
+			}
+
+			function emptyTrash() {
+				if (confirm('Are you sure you want to empty the Trash?')) {
+					sounds.click()
+
+					// Show emptying trash animation
+					const trashIcon = document.getElementById('trashIcon')
+					trashIcon.querySelector('.icon-image').textContent = '📭'
+
+					setTimeout(() => {
+						trashIcon.querySelector('.icon-image').textContent = '🗑️'
+					}, 1000)
+				}
+			}
+
+			function newFolder() {
+				sounds.click()
+
+				// Create new folder icon
+				const folderIcon = document.createElement('div')
+				folderIcon.className = 'icon'
+				folderIcon.style.left = '100px'
+				folderIcon.style.top = '100px'
+				folderIcon.innerHTML = `
+                <div class="icon-image">📁</div>
+                <div class="icon-label">untitled folder</div>
+            `
+
+				document.getElementById('desktop').appendChild(folderIcon)
+
+				// Setup icon events
+				folderIcon.addEventListener('click', (e) => {
+					e.stopPropagation()
+					sounds.click()
+
+					document.querySelectorAll('.icon').forEach((i) => {
+						if (i !== folderIcon) {
+							i.classList.remove('selected')
+						}
+					})
+
+					folderIcon.classList.toggle('selected')
+					selectedIcon = folderIcon.classList.contains('selected')
+						? folderIcon
+						: null
+				})
+
+				folderIcon.addEventListener('dblclick', (e) => {
+					e.stopPropagation()
+					sounds.click()
+					// Open folder in finder
+					openFinder()
+				})
+
+				// Select the new folder
+				folderIcon.classList.add('selected')
+				selectedIcon = folderIcon
+			}
+
+			function showInfoDialog(itemName) {
+				const content = `
+                <div class="about-dialog">
+                    <div class="dialog-title">Information</div>
+                    <div class="dialog-content">
+                        <p>Name: ${itemName}</p>
+                        <p>Kind: Application</p>
+                        <p>Size: 128 KB</p>
+                        <p>Created: Today</p>
+                        <p>Modified: Today</p>
+                    </div>
+                    <div class="dialog-buttons">
+                        <button class="button" onclick="closeDialog(this)">OK</button>
+                    </div>
+                </div>
+            `
+
+				const dialog = document.createElement('div')
+				dialog.className = 'dialog'
+				dialog.innerHTML = content
+				dialog.style.left = '50%'
+				dialog.style.top = '50%'
+				dialog.style.transform = 'translate(-50%, -50%)'
+
+				document.getElementById('desktop').appendChild(dialog)
+			}
+
+			function closeDialog(button) {
+				sounds.click()
+				const dialog = button.closest('.dialog')
+				if (dialog) {
+					dialog.remove()
+				}
+			}
+
+			// State management
+			function saveState() {
+				const state = {
+					windows: windows.map((window) => ({
+						title: window.title,
+						width: window.element.style.width,
+						height: window.element.style.height,
+						left: window.element.style.left,
+						top: window.element.style.top,
+					})),
+					icons: Array.from(document.querySelectorAll('.icon')).map((icon) => ({
+						id: icon.id,
+						left: icon.style.left,
+						top: icon.style.top,
+					})),
+				}
+
+				localStorage.setItem('macOS75State', JSON.stringify(state))
+			}
+
+			function loadState() {
+				const savedState = localStorage.getItem('macOS75State')
+				if (savedState) {
+					try {
+						const state = JSON.parse(savedState)
+
+						// Restore icons
+						state.icons.forEach((iconData) => {
+							const icon = document.getElementById(iconData.id)
+							if (icon) {
+								icon.style.left = iconData.left
+								icon.style.top = iconData.top
+							}
+						})
+					} catch (e) {
+						console.error('Error loading state:', e)
+					}
+				}
+			}
+
+			// Easter egg - Secret keystroke
+			let secretCode = ''
+			document.addEventListener('keydown', (e) => {
+				secretCode += e.key.toLowerCase()
+
+				// Check for secret code
+				if (secretCode.includes('apple')) {
+					secretCode = ''
+					showEasterEgg()
+				}
+
+				// Keep only last 5 characters
+				if (secretCode.length > 5) {
+					secretCode = secretCode.slice(-5)
+				}
+			})
+
+			function showEasterEgg() {
+				const content = `
+                <div class="about-dialog">
+                    <div class="dialog-title">Secret Message</div>
+                    <div class="dialog-content">
+                        <p>🎉 You found the secret! 🎉</p>
+                        <p>Here's a classic Mac joke for you:</p>
+                        <p>How many Mac users does it take to change a light bulb?</p>
+                        <p>None. They just wait for the next version of the OS.</p>
+                    </div>
+                    <div class="dialog-buttons">
+                        <button class="button" onclick="closeDialog(this)">Cool!</button>
+                    </div>
+                </div>
+            `
+
+				const dialog = document.createElement('div')
+				dialog.className = 'dialog'
+				dialog.innerHTML = content
+				dialog.style.left = '50%'
+				dialog.style.top = '50%'
+				dialog.style.transform = 'translate(-50%, -50%)'
+
+				document.getElementById('desktop').appendChild(dialog)
+			}
+
+			// Initialize the system when the page loads
+			window.addEventListener('load', init)
+		</script>
+	</body>
+</html>
