@@ -1,9 +1,9 @@
-# Web OS Mac Demo
+# Web OS Mac 1996 Demo
 
 These were all 1-prompt shots. Notable observations:
 - Gemini didn't want to produce a result.
-- Qwen is stuck on boot.
-- GPT 5 Pro by far the best. (in ChatGPT, not even the higher API model)
+- Qwen is stuck on boot, even after 2nd prompt.
+- GPT 5 Pro feels by far the best. (in ChatGPT, not even the higher API model)
 - Grok 4 very disappointing (but could be due to wrappers)
 
 ## HTML File Rankings
@@ -19,3 +19,10 @@ These were all 1-prompt shots. Notable observations:
 | 7    | kimi-k2.html           | 852        | 21312           |
 | 8    | perplexity-grok4.html  | 551        | 12732           |
 | 9    | grok-4-t3.html         | 523        | 12206           |
+
+
+### GPT-5 Pro
+<img width="3024" height="1664" alt="CleanShot 2025-08-15 at 22 39 40@2x" src="https://github.com/user-attachments/assets/2d7052ca-1611-45d6-8968-8055d9cd26da" />
+
+### Claude 4.1 Opus
+<img width="3024" height="1666" alt="CleanShot 2025-08-15 at 22 43 52@2x" src="https://github.com/user-attachments/assets/463b61d6-353e-446c-b872-85db3973003b" />
