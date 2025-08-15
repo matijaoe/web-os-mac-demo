@@ -3,8 +3,9 @@
 These were all 1-prompt shots. Notable observations:
 - Gemini didn't want to produce a result.
 - Qwen is stuck on boot, even after 2nd prompt.
-- GPT 5 Pro feels by far the best. (in ChatGPT, not even the higher API model)
+- GPT 5 Pro & Opus feel best.
 - Grok 4 very disappointing (but could be due to wrappers)
+- All have bugs
 
 ## HTML File Rankings
 
